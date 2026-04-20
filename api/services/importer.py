@@ -134,16 +134,26 @@ def _upsert_document(db: Session, data: dict) -> Document:
     return doc
 
 
+import hashlib
+
+
+def _text_hash(text: str) -> str:
+    """Return short hash for content matching."""
+    return hashlib.sha256(text.encode()).hexdigest()[:12]
+
+
 def _upsert_segments(db: Session, doc: Document, doc_segmented: list) -> dict[str, int]:
     """
-    Returns {clanak_label: segment_id} for embedding cross-reference.
+    Returns {text_hash: segment_id} for embedding cross-reference.
 
     New structure: [{"glava": "...", "članci": [{"članak": "...", "stavci": [...]}]}]
+    Uses content hash as key to handle duplicate (glava, label) entries.
     """
-    label_to_id: dict[str, int] = {}
+    hash_to_id: dict[str, int] = {}
 
     segment_order = 0
     for chapter in doc_segmented:
+        glava = chapter.get("glava", "")
         for clanak in chapter.get("članci", []):
             label = clanak.get("članak", "")
             passages: list[str] = []
@@ -152,6 +162,8 @@ def _upsert_segments(db: Session, doc: Document, doc_segmented: list) -> dict[st
             text = " ".join(passages).strip()
             if not text:
                 continue
+
+            text_hash = _text_hash(text)
 
             seg = (
                 db.query(DocumentSegment)
@@ -173,10 +185,10 @@ def _upsert_segments(db: Session, doc: Document, doc_segmented: list) -> dict[st
                 db.add(seg)
 
             db.flush()
-            label_to_id[label] = seg.id
+            hash_to_id[text_hash] = seg.id
             segment_order += 1
 
-    return label_to_id
+    return hash_to_id
 
 
 def _upsert_summaries(
@@ -243,6 +255,7 @@ def _upsert_embedding(
     vector: list[float],
     segment_id: int | None = None,
 ) -> None:
+    # First try to update existing
     existing = (
         db.query(DocumentEmbedding)
         .filter(
@@ -272,7 +285,7 @@ def _upsert_embeddings(
     db: Session,
     doc: Document,
     emb_data: dict,
-    label_to_id: dict[str, int],
+    hash_to_id: dict[str, int],
 ) -> None:
     model_name = emb_data.get("model_name", "")
     embedding_dim = emb_data.get("embedding_dim", 384)
@@ -287,14 +300,17 @@ def _upsert_embeddings(
         db_type = _EMBEDDING_TYPE_MAP.get(json_key, f"summary_{json_key}")
         _upsert_embedding(db, doc, db_type, model_name, embedding_dim, vec)
 
+    # Compute hashes for incoming embeddings and match by content
     for seg_entry in emb_data.get("segment_embeddings", []):
-        label = seg_entry.get("članak", "")
+        text = seg_entry.get("text", "")
         vec = seg_entry.get("embedding")
-        seg_id = label_to_id.get(label)
-        if vec and seg_id:
-            _upsert_embedding(
-                db, doc, "segment", model_name, embedding_dim, vec, seg_id
-            )
+        if text and vec:
+            text_hash = _text_hash(text)
+            seg_id = hash_to_id.get(text_hash)
+            if seg_id:
+                _upsert_embedding(
+                    db, doc, "segment", model_name, embedding_dim, vec, seg_id
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -309,7 +325,25 @@ def import_file(db: Session, path: Path) -> None:
     if not data.get("eli"):
         raise ValueError("Missing 'eli' field")
 
+    from api.models.db import DocumentEmbedding, DocumentSegment
+
     doc = _upsert_document(db, data)
+
+    emb_data = data.get("embeddings", {})
+    model_name = emb_data.get("model_name", "")
+
+    # Clean up old embeddings when re-importing (structure changed from old flat to new nested)
+    if model_name:
+        db.query(DocumentEmbedding).filter(
+            DocumentEmbedding.document_id == doc.id,
+            DocumentEmbedding.embedding_type == "segment",
+            DocumentEmbedding.model_name == model_name,
+        ).delete(synchronize_session=False)
+        db.query(DocumentSegment).filter(
+            DocumentSegment.document_id == doc.id,
+        ).delete(synchronize_session=False)
+        db.flush()
+
     label_to_id = _upsert_segments(db, doc, data.get("doc_segmented", []))
 
     summaries = data.get("summaries", {})

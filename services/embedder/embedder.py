@@ -170,6 +170,7 @@ class Embedder:
                         {
                             "glava": glava,
                             "članak": label,
+                            "text": segment_text,
                             "embedding": emb,
                         }
                     )
