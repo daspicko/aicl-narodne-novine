@@ -30,21 +30,12 @@ Output shape added to each document:
 The Summarizer uses extractive MMR-based summarization (classla/bcms-bertic).
 The model is loaded once per run and shared across all document calls.
 """
+from dotenv import load_dotenv
+load_dotenv()
 
 import json
-import os
 import sys
 from pathlib import Path
-
-# ---------------------------------------------------------------------------
-# Force fully-offline HuggingFace operation BEFORE any transformers import.
-# This prevents all network calls: metadata checks, telemetry, update pings.
-# The model must already be cached locally (run without these flags once to
-# download it, then they stay set for all subsequent runs).
-# ---------------------------------------------------------------------------
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-
 import torch
 from transformers import AutoTokenizer, AutoModel
 # Maximum number of sentences embedded in a single forward pass.
@@ -311,9 +302,6 @@ def main(force: bool = False) -> None:
     if not NORMALIZED_DIR.exists():
         print(f"ERROR: normalized data directory not found: {NORMALIZED_DIR}")
         return
-
-    # Reduce CUDA memory fragmentation
-    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}\n")

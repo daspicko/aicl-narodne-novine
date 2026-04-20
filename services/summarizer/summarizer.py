@@ -1,12 +1,11 @@
-import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import re
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel
 from transformers import logging as transformers_logging
-
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 transformers_logging.set_verbosity_error()
 
 class Summarizer:
