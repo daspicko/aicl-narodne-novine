@@ -1,0 +1,4 @@
+model_name: "sentence-transformers/all-MiniLM-L6-v2"
+max_tokens: 256      # model's effective context window (word-pieces per chunk)
+batch_size: 32       # sentences / passages per forward pass
+embedding_dim: 384   # output vector dimensionality
