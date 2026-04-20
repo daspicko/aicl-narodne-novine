@@ -93,8 +93,18 @@ async def main() -> None:
         with open(folder_name + "/" + filename, "w", encoding="utf-8") as f:
             f.write(json.dumps(data, ensure_ascii=False))
 
+    # Filter out URLs that have already been fetched (file exists in data/raw).
+    def is_cached(url: str) -> bool:
+        path = url.replace("https://narodne-novine.nn.hr/eli/sluzbeni/", "")
+        filename = path.split("/")[-1] + ".json"
+        folder_name = EXPORT_FOLDER_PATH + "/" + "/".join(path.split("/")[:-1])
+        return os.path.exists(os.path.join(folder_name, filename))
+
+    urls_to_fetch = [url for url in sc.all_urls[0:10] if not is_cached(url)]
+    print(f"Fetching {len(urls_to_fetch)} URLs (skipping {10 - len(urls_to_fetch)} cached).")
+
     # Run the crawler with the initial list of URLs.
-    await crawler.run(sc.all_urls[0:10])
+    await crawler.run(urls_to_fetch)
 
 
 if __name__ == '__main__':

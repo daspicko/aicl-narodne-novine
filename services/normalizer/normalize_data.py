@@ -308,6 +308,7 @@ def process_file(raw_path: Path) -> None:
 
     segments, opis = segment_doc(doc_html)
     data["opis"] = opis
+    data["doc_cleaned"] = clean_text(doc_html)
     data["doc_segmented"] = segments
     del data["doc"]
 

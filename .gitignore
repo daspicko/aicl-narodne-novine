@@ -52,3 +52,4 @@ data
 # Services
 services/scraper/all_urls.json
 services/scraper/storage
+services/summarizer/*.png

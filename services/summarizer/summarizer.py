@@ -116,20 +116,3 @@ class Summarizer:
 
     def sumarize(self, text, num_sentences=3, lambda_param=0.75, device="cuda" if torch.cuda.is_available() else "cpu"): # lambda higher = more relevant, lower = more diverse
         return self.extractive_summary(text, num_sentences=num_sentences, lambda_param=lambda_param, device=device)
-
-if __name__ == "__main__":
-    text = """
-    Gradsko vijeće usvojilo je novi prometni plan nakon višemjesečne rasprave.
-    Prijedlog uključuje širenje autobusnih traka, izgradnju zaštićenih biciklističkih staza
-    i modernizaciju prometne signalizacije.
-    Dužnosnici tvrde da će promjene smanjiti gužve, poboljšati sigurnost
-    i smanjiti emisije u sljedećem desetljeću.
-    Neki stanovnici podržavaju okolišne koristi, dok su drugi zabrinuti
-    zbog kašnjenja radova i gubitka parkirnih mjesta.
-    Prva faza projekta trebala bi početi u rujnu.
-    """
-
-    summarizer = Summarizer()
-    summary = summarizer.sumarize(text, num_sentences=1)
-
-    print("SAŽETAK:", summary)
