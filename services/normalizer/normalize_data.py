@@ -336,17 +336,24 @@ def segment_doc(html: str) -> tuple[list[dict], str]:
     if current_clanci:
         chapters.append({"glava": current_glava, "članci": current_clanci})
 
-    # Separate preamble (no glava) from chapters
+    # Separate preamble (text before first article) from chapters
     opis_parts: list[str] = []
     segments: list[dict] = []
 
     for ch in chapters:
-        if ch["glava"] is None:
-            for cl in ch["članci"]:
+        filtered_clanci: list[dict] = []
+
+        for cl in ch["članci"]:
+            if cl["članak"] is None:
+                # Preamble text - goes to opis
                 for st in cl["stavci"]:
                     opis_parts.extend(st["točke"])
-        else:
-            segments.append(ch)
+            else:
+                # Actual article
+                filtered_clanci.append(cl)
+
+        if filtered_clanci:
+            segments.append({"glava": ch["glava"], "članci": filtered_clanci})
 
     opis = " ".join(opis_parts)
     return segments, opis

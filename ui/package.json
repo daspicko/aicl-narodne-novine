@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy:local": "rm -rf /var/www/local/narodne-novine.apprepo.eu/* && cp -r build/* /var/www/local/narodne-novine.apprepo.eu/"
+    "deploy:local": "rm -rf /var/www/local/narodne-novine.apprepo.eu/* && cp -r build/* /var/www/local/narodne-novine.apprepo.eu/",
+    "deploy:localFull": "npm run prebuild && npm run build && npm run deploy:local"
   },
   "dependencies": {
     "fuse.js": "^7.3.0",
