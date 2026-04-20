@@ -7,32 +7,43 @@ Input:   data/raw/<year>/<issue>/<doc>.json
 Output:  data/normalized/<year>/<issue>/<doc>.json   (same tree, different root)
 
 For each document that contains a 'doc' (raw HTML) field, this script:
-  1. Strips HTML tags, removes \\r/\\n, and collapses whitespace  →  clean_text()
-  2. Detects article (članak) boundaries using the "Član N." heading pattern
-  3. Extracts the preamble (text before the first Član) into a top-level 'opis' field
-  4. Groups paragraphs into stavci by the (1), (2), … prefix
-  5. Within each stavak collects individual paragraphs as točke
-  6. Writes the enriched document to the normalized output tree
+  1. Strips HTML tags, removes \r/\n, and collapses whitespace  →  clean_text()
+  2. Detects chapter (glava) headings using Roman numeral patterns (I., II., ...)
+  3. Detects article (članak) boundaries using the "Član N." heading pattern
+  4. Extracts the preamble (text before the first glava) into a top-level 'opis' field
+  5. Groups paragraphs into stavci by the (1), (2), … prefix
+  6. Within each stavak collects individual paragraphs as točke
+  7. Writes the enriched document to the normalized output tree
 
 Top-level properties added:
-  "opis"          – plain text of the preamble before the first Član
-  "doc_segmented" – list of članci (see schema below)
+  "opis"          – plain text of the preamble before the first glava
+  "doc_segmented" – list of chapters (see schema below)
 
 Output shape of doc_segmented:
 [
   {
-    "članak": "Član 1.",
-    "stavci": [
+    "glava": "I. OPĆE ODREDBE",
+    "članci": [
       {
-        "stavak": "(1)" | null,    # null = unnumbered block
-        "točke": [
-          "paragraph / sub-item text 1",
-          "paragraph / sub-item text 2",
+        "članak": "Član 1.",
+        "stavci": [
+          {
+            "stavak": "(1)" | null,    # null = unnumbered block
+            "točke": [
+              "paragraph / sub-item text 1",
+              "paragraph / sub-item text 2",
+              ...
+            ]
+          },
           ...
         ]
       },
       ...
     ]
+  },
+  {
+    "glava": "VI. KVALITETA ŠUMSKOG SJEMENA...",
+    "članci": [...]
   },
   ...
 ]
@@ -51,12 +62,17 @@ from bs4 import BeautifulSoup, Tag
 # Repo root is two levels up
 _DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
 
-RAW_DIR        = _DATA_ROOT / "raw"         # input:  data/raw/<year>/<issue>/<doc>.json
-NORMALIZED_DIR = _DATA_ROOT / "normalized"  # output: data/normalized/<year>/<issue>/<doc>.json
+RAW_DIR = _DATA_ROOT / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
+NORMALIZED_DIR = (
+    _DATA_ROOT / "normalized"
+)  # output: data/normalized/<year>/<issue>/<doc>.json
 
 # ---------------------------------------------------------------------------
 # Regex constants
 # ---------------------------------------------------------------------------
+
+# Chapter heading: "I. OPĆE ODREDBE", "VI. KVALITETA ŠUMSKOG SJEMENA...", "VII PROMET..."
+_GLAVA_RE = re.compile(r"^[IVX]+\.?\s+.+", re.IGNORECASE)
 
 # Article marker:  "Član 1."  "Član 12."  (with optional surrounding whitespace)
 _CLANAK_RE = re.compile(r"^Član\s+\d+\.\s*$", re.IGNORECASE)
@@ -65,17 +81,50 @@ _CLANAK_RE = re.compile(r"^Član\s+\d+\.\s*$", re.IGNORECASE)
 _STAVAK_RE = re.compile(r"^\(\d+\)")
 
 # Croatian legal abbreviations whose trailing period must NOT trigger a sentence split
-_ABBREVS: frozenset[str] = frozenset({
-    "br", "st", "čl", "dr", "mr", "prof", "op", "sl", "tzv", "tj",
-    "npr", "str", "god", "sv", "vs", "al", "ul", "bb", "no", "tar",
-    "pos", "vel", "odg", "ref", "tel", "itd", "idr", "spec", "nar",
-    "sr", "rh", "nn", "sfrj", "sfr",
-})
+_ABBREVS: frozenset[str] = frozenset(
+    {
+        "br",
+        "st",
+        "čl",
+        "dr",
+        "mr",
+        "prof",
+        "op",
+        "sl",
+        "tzv",
+        "tj",
+        "npr",
+        "str",
+        "god",
+        "sv",
+        "vs",
+        "al",
+        "ul",
+        "bb",
+        "no",
+        "tar",
+        "pos",
+        "vel",
+        "odg",
+        "ref",
+        "tel",
+        "itd",
+        "idr",
+        "spec",
+        "nar",
+        "sr",
+        "rh",
+        "nn",
+        "sfrj",
+        "sfr",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Public cleanup function
 # ---------------------------------------------------------------------------
+
 
 def clean_text(html: str) -> str:
     """
@@ -98,6 +147,7 @@ def clean_text(html: str) -> str:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _elem_text(element: Tag) -> str:
     """Return clean plain text for a BeautifulSoup element (no HTML, no newlines)."""
     raw = element.get_text(separator=" ")
@@ -110,9 +160,15 @@ def _is_clanak(text: str) -> bool:
     return bool(_CLANAK_RE.match(text))
 
 
+def _is_glava(text: str) -> bool:
+    """Return True if *text* matches a chapter (glava) heading."""
+    return bool(_GLAVA_RE.match(text))
+
+
 # ---------------------------------------------------------------------------
 # Sentence splitter
 # ---------------------------------------------------------------------------
+
 
 def split_recenice(text: str) -> list[str]:
     """
@@ -160,7 +216,7 @@ def split_recenice(text: str) -> list[str]:
             continue
 
         # Commit sentence (include the punctuation character)
-        sentence = text[start: punct_pos + 1].strip()
+        sentence = text[start : punct_pos + 1].strip()
         if sentence:
             sentences.append(sentence)
         start = m.end()
@@ -176,6 +232,7 @@ def split_recenice(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Stavak builder  –  each paragraph becomes one točka
 # ---------------------------------------------------------------------------
+
 
 def _build_stavci(paragraphs: list[str]) -> list[dict]:
     """
@@ -194,10 +251,12 @@ def _build_stavci(paragraphs: list[str]) -> list[dict]:
 
     def _commit() -> None:
         if current_tocke:
-            stavci.append({
-                "stavak": current_label,
-                "točke": list(current_tocke),
-            })
+            stavci.append(
+                {
+                    "stavak": current_label,
+                    "točke": list(current_tocke),
+                }
+            )
 
     for para in paragraphs:
         m = _STAVAK_RE.match(para)
@@ -216,11 +275,12 @@ def _build_stavci(paragraphs: list[str]) -> list[dict]:
 # Main segmentation function
 # ---------------------------------------------------------------------------
 
+
 def segment_doc(html: str) -> tuple[list[dict], str]:
     """
-    Parse *html* and segment it into članci → stavci → točke.
+    Parse *html* and segment it into glava → članci → stavci → točke.
 
-    The preamble (everything before the first Član) is **not** included in the
+    The preamble (everything before the first glava) is **not** included in the
     returned segment list; instead its text is returned as a plain string so
     the caller can store it in the top-level ``"opis"`` field.
 
@@ -228,26 +288,30 @@ def segment_doc(html: str) -> tuple[list[dict], str]:
         html: Raw HTML string from the 'doc' field.
 
     Returns:
-        ``(segments, opis)`` where *segments* is the list of članak dicts
+        ``(segments, opis)`` where *segments* is the list of glava dicts
         and *opis* is the cleaned preamble text.
     """
     soup = BeautifulSoup(html, "lxml")
     container = soup.find("div") or soup.find("body") or soup
 
-    all_segments: list[dict] = []
+    chapters: list[dict] = []
+    current_glava: str | None = None
     current_clanak: str | None = None
     current_paragraphs: list[str] = []
+    current_clanci: list[dict] = []
 
-    def _flush() -> None:
+    def _flush_clanak() -> None:
         nonlocal current_clanak, current_paragraphs
         if not current_paragraphs:
             return
         stavci = _build_stavci(current_paragraphs)
         if stavci:
-            all_segments.append({
-                "članak": current_clanak,
-                "stavci": stavci,
-            })
+            current_clanci.append(
+                {
+                    "članak": current_clanak,
+                    "stavci": stavci,
+                }
+            )
         current_paragraphs = []
 
     for child in container.children:
@@ -256,24 +320,33 @@ def segment_doc(html: str) -> tuple[list[dict], str]:
         text = _elem_text(child)
         if not text:
             continue
-        if _is_clanak(text):
-            _flush()
+        if _is_glava(text):
+            _flush_clanak()
+            if current_clanci:
+                chapters.append({"glava": current_glava, "članci": current_clanci})
+            current_glava = text
+            current_clanci = []
+        elif _is_clanak(text):
+            _flush_clanak()
             current_clanak = text
         else:
             current_paragraphs.append(text)
 
-    _flush()
+    _flush_clanak()
+    if current_clanci:
+        chapters.append({"glava": current_glava, "članci": current_clanci})
 
-    # Separate preamble (članak == null) from real articles
+    # Separate preamble (no glava) from chapters
     opis_parts: list[str] = []
     segments: list[dict] = []
 
-    for seg in all_segments:
-        if seg["članak"] is None:
-            for st in seg["stavci"]:
-                opis_parts.extend(st["točke"])
+    for ch in chapters:
+        if ch["glava"] is None:
+            for cl in ch["članci"]:
+                for st in cl["stavci"]:
+                    opis_parts.extend(st["točke"])
         else:
-            segments.append(seg)
+            segments.append(ch)
 
     opis = " ".join(opis_parts)
     return segments, opis
@@ -282,6 +355,7 @@ def segment_doc(html: str) -> tuple[list[dict], str]:
 # ---------------------------------------------------------------------------
 # File-level processing
 # ---------------------------------------------------------------------------
+
 
 def process_file(raw_path: Path) -> None:
     """
@@ -322,6 +396,7 @@ def process_file(raw_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     """Recursively process every .json file under RAW_DIR → NORMALIZED_DIR."""

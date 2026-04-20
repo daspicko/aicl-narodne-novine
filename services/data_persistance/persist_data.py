@@ -1,5 +1,5 @@
 """
-store_to_db.py
+data_persistance.py
 --------------
 Standalone script that reads all data/embedded/*.json files and stores
 (upserts) them into PostgreSQL.
@@ -10,9 +10,9 @@ Intended to run on any machine that has:
   - DATABASE_URL set in .env (or the environment)
 
 Usage:
-    python services/store_to_db/store_to_db.py
-    python services/store_to_db/store_to_db.py --dir /path/to/embedded
-    python services/store_to_db/store_to_db.py --dir /path/to/embedded --create-tables
+    python services/data_persistance/data_persistance.py
+    python services/data_persistance/data_persistance.py --dir /path/to/embedded
+    python services/data_persistance/data_persistance.py --dir /path/to/embedded --create-tables
 """
 
 import argparse

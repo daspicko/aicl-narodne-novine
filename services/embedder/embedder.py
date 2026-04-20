@@ -16,7 +16,9 @@ Model: sentence-transformers/all-MiniLM-L6-v2
 
 No network access is made; the model must be cached locally.
 """
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import re
@@ -33,14 +35,15 @@ from transformers import AutoTokenizer, AutoModel
 
 _cfg = yaml.safe_load((Path(__file__).parent / "config.yaml").read_text())
 
-MODEL_NAME    = _cfg["model_name"]
-_MAX_TOKENS   = _cfg["max_tokens"]
-_BATCH_SIZE   = _cfg["batch_size"]
+MODEL_NAME = _cfg["model_name"]
+_MAX_TOKENS = _cfg["max_tokens"]
+_BATCH_SIZE = _cfg["batch_size"]
 _EMBEDDING_DIM = _cfg["embedding_dim"]
 
 # ---------------------------------------------------------------------------
 # Result dataclass
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class EmbeddingResult:
@@ -56,19 +59,20 @@ class EmbeddingResult:
         model_name          : model identifier for provenance tracking
         embedding_dim       : dimensionality of all vectors
     """
-    document_embedding:  list[float]              = field(default_factory=list)
-    title_embedding:     list[float]              = field(default_factory=list)
-    summary_embeddings:  dict[str, list[float]]   = field(default_factory=dict)
-    segment_embeddings:  list[dict]               = field(default_factory=list)
-    model_name:          str                      = MODEL_NAME
-    embedding_dim:       int                      = _EMBEDDING_DIM
+
+    document_embedding: list[float] = field(default_factory=list)
+    title_embedding: list[float] = field(default_factory=list)
+    summary_embeddings: dict[str, list[float]] = field(default_factory=dict)
+    segment_embeddings: list[dict] = field(default_factory=list)
+    model_name: str = MODEL_NAME
+    embedding_dim: int = _EMBEDDING_DIM
 
     def to_dict(self) -> dict:
         return {
-            "model_name":         self.model_name,
-            "embedding_dim":      self.embedding_dim,
+            "model_name": self.model_name,
+            "embedding_dim": self.embedding_dim,
             "document_embedding": self.document_embedding,
-            "title_embedding":    self.title_embedding,
+            "title_embedding": self.title_embedding,
             "summary_embeddings": self.summary_embeddings,
             "segment_embeddings": self.segment_embeddings,
         }
@@ -77,6 +81,7 @@ class EmbeddingResult:
 # ---------------------------------------------------------------------------
 # Embedder
 # ---------------------------------------------------------------------------
+
 
 class Embedder:
     """
@@ -94,12 +99,14 @@ class Embedder:
     """
 
     def __init__(self, device: str | None = None) -> None:
-        self.device        = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model_name    = MODEL_NAME
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_name = MODEL_NAME
         self.embedding_dim = _EMBEDDING_DIM
-        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
-        self.model     = AutoModel.from_pretrained(MODEL_NAME, local_files_only=True)
-        self.model     = self.model.to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_NAME, local_files_only=True
+        )
+        self.model = AutoModel.from_pretrained(MODEL_NAME, local_files_only=True)
+        self.model = self.model.to(self.device)
         self.model.eval()
 
     # ------------------------------------------------------------------
@@ -147,19 +154,25 @@ class Embedder:
         result.summary_embeddings = summary_embeddings
 
         # 4. Segment-level (one per članak)
+        # New structure: [{"glava": "...", "članci": [{"članak": "...", "stavci": [...]}]}]
         segment_embeddings: list[dict] = []
-        for clanak in data.get("doc_segmented", []):
-            label    = clanak.get("članak", "")
-            passages = []
-            for stavak in clanak.get("stavci", []):
-                passages.extend(stavak.get("točke", []))
-            segment_text = " ".join(passages).strip()
-            if segment_text:
-                emb = self._embed_long_text(segment_text)
-                segment_embeddings.append({
-                    "članak":    label,
-                    "embedding": emb,
-                })
+        for chapter in data.get("doc_segmented", []):
+            glava = chapter.get("glava", "")
+            for clanak in chapter.get("članci", []):
+                label = clanak.get("članak", "")
+                passages = []
+                for stavak in clanak.get("stavci", []):
+                    passages.extend(stavak.get("točke", []))
+                segment_text = " ".join(passages).strip()
+                if segment_text:
+                    emb = self._embed_long_text(segment_text)
+                    segment_embeddings.append(
+                        {
+                            "glava": glava,
+                            "članak": label,
+                            "embedding": emb,
+                        }
+                    )
 
         result.segment_embeddings = segment_embeddings
         return result
@@ -173,10 +186,10 @@ class Embedder:
         last_hidden: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> torch.Tensor:
-        mask    = attention_mask.unsqueeze(-1).expand(last_hidden.size()).float()
-        summed  = (last_hidden * mask).sum(dim=1)
-        counts  = mask.sum(dim=1).clamp(min=1e-9)
-        pooled  = summed / counts
+        mask = attention_mask.unsqueeze(-1).expand(last_hidden.size()).float()
+        summed = (last_hidden * mask).sum(dim=1)
+        counts = mask.sum(dim=1).clamp(min=1e-9)
+        pooled = summed / counts
         return F.normalize(pooled, p=2, dim=1)
 
     def _encode_batch(self, texts: list[str]) -> torch.Tensor:
@@ -206,28 +219,28 @@ class Embedder:
         4. Mean-pooling chunk embeddings → single document vector.
         """
         sentences = self._split_sentences(text)
-        chunks    = self._pack_chunks(sentences)
+        chunks = self._pack_chunks(sentences)
 
         if not chunks:
             return self._embed_single(text)
 
         all_embs: list[torch.Tensor] = []
         for i in range(0, len(chunks), _BATCH_SIZE):
-            batch = chunks[i: i + _BATCH_SIZE]
-            embs  = self._encode_batch(batch)        # (B, 384)
+            batch = chunks[i : i + _BATCH_SIZE]
+            embs = self._encode_batch(batch)  # (B, 384)
             all_embs.append(embs.cpu())
             if self.device == "cuda":
                 torch.cuda.empty_cache()
 
-        stacked = torch.cat(all_embs, dim=0)         # (N_chunks, 384)
-        pooled  = stacked.mean(dim=0)                # (384,)
-        pooled  = F.normalize(pooled.unsqueeze(0), p=2, dim=1).squeeze(0)
+        stacked = torch.cat(all_embs, dim=0)  # (N_chunks, 384)
+        pooled = stacked.mean(dim=0)  # (384,)
+        pooled = F.normalize(pooled.unsqueeze(0), p=2, dim=1).squeeze(0)
         return pooled.tolist()
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:
         """Simple sentence splitter."""
-        parts = re.split(r'(?<=[.!?])\s+', text.strip())
+        parts = re.split(r"(?<=[.!?])\s+", text.strip())
         return [s.strip() for s in parts if s.strip()]
 
     def _pack_chunks(self, sentences: list[str]) -> list[str]:
@@ -235,16 +248,16 @@ class Embedder:
         Greedily pack consecutive sentences into chunks that fit within
         _MAX_TOKENS. Returns a list of chunk strings.
         """
-        chunks:   list[str] = []
-        current:  list[str] = []
-        cur_len:  int       = 0
+        chunks: list[str] = []
+        current: list[str] = []
+        cur_len: int = 0
 
         for sent in sentences:
             token_len = len(self.tokenizer.tokenize(sent))
             if cur_len + token_len > _MAX_TOKENS and current:
                 chunks.append(" ".join(current))
-                current  = []
-                cur_len  = 0
+                current = []
+                cur_len = 0
             current.append(sent)
             cur_len += token_len
 

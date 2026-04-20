@@ -1,5 +1,5 @@
 """
-data_extraction.py
+extract_data.py
 ------------------
 Extraction pipeline for Croatian legal documents.
 
@@ -19,8 +19,8 @@ For each document the following fields are added under "key_information":
 }
 
 Run:
-    python data_extraction.py           # skip already-extracted files
-    python data_extraction.py --force   # re-extract everything
+    python extract_data.py           # skip already-extracted files
+    python extract-data.py --force   # re-extract everything
 """
 
 import json

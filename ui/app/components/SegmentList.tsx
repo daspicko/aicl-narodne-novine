@@ -1,7 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import type { Segment } from '@/lib/types';
+
+interface SegmentStavak {
+  stavak: string | null;
+  točke: string[];
+}
+
+interface SegmentClanak {
+  članak: string;
+  stavci: SegmentStavak[];
+}
+
+interface Segment {
+  glava: string;
+  članci: SegmentClanak[];
+}
 
 export default function SegmentList({ segments }: { segments: Segment[] }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set([0]));
@@ -16,15 +30,17 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
     });
   }
 
+  const allClanci = segments.flatMap(ch => ch.članci);
+
   return (
     <section>
       <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-        Članci ({segments.length})
+        Članci ({allClanci.length})
       </h2>
       <div className="space-y-1">
-        {segments.map((seg, i) => {
+        {allClanci.map((clanak, i) => {
           const isOpen = expanded.has(i);
-          const preview = seg.stavci[0]?.točke[0];
+          const preview = clanak.stavci[0]?.točke[0];
           return (
             <div
               key={i}
@@ -36,7 +52,7 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
                            text-left text-sm font-medium text-zinc-600
                            hover:bg-zinc-50 transition-colors"
               >
-                <span>{seg.članak}</span>
+                <span>{clanak.članak}</span>
                 <span className={`text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
                   ▾
                 </span>
@@ -50,7 +66,7 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
 
               {isOpen && (
                 <div className="px-4 pb-4 space-y-2">
-                  {seg.stavci.map((stavak, si) =>
+                  {clanak.stavci.map((stavak, si) =>
                     stavak.točke.map((točka, ti) => (
                       <p
                         key={`${si}-${ti}`}

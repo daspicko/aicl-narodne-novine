@@ -1,5 +1,5 @@
 """
-data_embedding.py
+embed_data.py
 -----------------
 Embedding pipeline for Croatian legal documents.
 
@@ -22,17 +22,19 @@ For each document the following field is added:
       "structured_što_uvodi_ili_mijenja": [ ... ]
     },
     "segment_embeddings": [
-      { "članak": "Član 1.", "embedding": [ ... ] },
+      { "glava": "I. OPĆE ODREDBE", "članak": "Član 1.", "embedding": [ ... ] },
       ...
     ]
   }
 }
 
 Run:
-    python data_embedding.py           # skip already-embedded files
-    python data_embedding.py --force   # re-embed everything
+    python embed_data.py           # skip already-embedded files
+    python embed_data.py --force   # re-embed everything
 """
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import json
@@ -45,9 +47,9 @@ import torch  # noqa: E402 – must come after env vars
 # Paths
 # ---------------------------------------------------------------------------
 
-_REPO_ROOT    = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 EXTRACTED_DIR = _REPO_ROOT / "data" / "extracted"
-EMBEDDED_DIR  = _REPO_ROOT / "data" / "embedded"
+EMBEDDED_DIR = _REPO_ROOT / "data" / "embedded"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from embedder import Embedder  # noqa: E402
@@ -81,8 +83,7 @@ def process_file(path: Path, embedder: Embedder) -> None:
 
     n_segments = len(result.segment_embeddings)
     n_summaries = len(result.summary_embeddings)
-    print(f"  ✓  {relative}  "
-          f"(doc+title+{n_summaries} summaries+{n_segments} segments)")
+    print(f"  ✓  {relative}  (doc+title+{n_summaries} summaries+{n_segments} segments)")
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +108,7 @@ def main(force: bool = False) -> None:
     json_files = sorted(EXTRACTED_DIR.rglob("*.json"))
     print(f"Found {len(json_files)} JSON file(s)\n")
 
-    errors:  list[tuple[Path, Exception]] = []
+    errors: list[tuple[Path, Exception]] = []
     skipped: int = 0
 
     for path in json_files:

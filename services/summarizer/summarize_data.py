@@ -10,7 +10,7 @@ For each document that contains a 'doc_cleaned' field, this script generates:
   1. short_summary     – 3 extractive sentences (2–4 range)
   2. detailed_summary  – 8 extractive sentences (6–10 range)
   3. structured_summary:
-       - što_zakon_uređuje  – 2 sentences focused on scope/purpose (opis + Član 1)
+       - što_zakon_uređuje  – 2 sentences focused on scope/purpose (opis + first Član)
        - na_koga_se_odnosi  – 2 sentences focused on subjects (diverse selection)
        - što_uvodi_ili_mijenja – 2 sentences focused on changes (full text)
 
@@ -29,8 +29,15 @@ Output shape added to each document:
 
 The Summarizer uses extractive MMR-based summarization (classla/bcms-bertic).
 The model is loaded once per run and shared across all document calls.
+
+Note: The doc_segmented structure has changed from:
+  [{"članak": "...", "stavci": [...]}]
+To:
+  [{"glava": "...", "članci": [{"članak": "...", "stavci": [...]}]}]
 """
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import json
@@ -38,6 +45,7 @@ import sys
 from pathlib import Path
 import torch
 from transformers import AutoTokenizer, AutoModel
+
 # Maximum number of sentences embedded in a single forward pass.
 # Lower this if you still hit OOM on your GPU.
 _EMBED_BATCH_SIZE = 16
@@ -64,6 +72,7 @@ from summarizer import Summarizer  # noqa: E402
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _build_scope_text(data: dict) -> str:
     """
     Build a focused text for 'što zakon uređuje' from:
@@ -79,8 +88,9 @@ def _build_scope_text(data: dict) -> str:
 
     segments = data.get("doc_segmented", [])
     if segments:
-        first = segments[0]
-        for stavak in first.get("stavci", []):
+        first_chapter = segments[0]
+        first_clanak = first_chapter.get("članci", [])[0]
+        for stavak in first_clanak.get("stavci", []):
             parts.extend(stavak.get("točke", []))
 
     if parts:
@@ -89,9 +99,7 @@ def _build_scope_text(data: dict) -> str:
     return data.get("doc_cleaned", "")
 
 
-def _make_summarizer_with_shared_model(
-    tokenizer, model, device: str
-) -> Summarizer:
+def _make_summarizer_with_shared_model(tokenizer, model, device: str) -> Summarizer:
     """
     Return a Summarizer that reuses a single pre-loaded tokenizer + model for
     every call, avoiding repeated HuggingFace API hits and model reloads.
@@ -109,7 +117,7 @@ def _make_summarizer_with_shared_model(
     def _embed_batched(texts: list[str], _tok, _mdl, device=device) -> torch.Tensor:
         all_embeddings: list[torch.Tensor] = []
         for start in range(0, len(texts), _EMBED_BATCH_SIZE):
-            batch = texts[start: start + _EMBED_BATCH_SIZE]
+            batch = texts[start : start + _EMBED_BATCH_SIZE]
             emb = _orig_embed(batch, tokenizer, model, device=device)
             all_embeddings.append(emb.cpu())
             if device == "cuda":
@@ -155,9 +163,9 @@ def _make_summarizer_with_shared_model(
 def _chunk_sentences(sentences: list[str], chunk_size: int) -> list[list[str]]:
     """Split a flat sentence list into overlapping chunks of *chunk_size*."""
     chunks: list[list[str]] = []
-    step = max(1, chunk_size - 5)   # 5-sentence overlap between chunks
+    step = max(1, chunk_size - 5)  # 5-sentence overlap between chunks
     for start in range(0, len(sentences), step):
-        chunk = sentences[start: start + chunk_size]
+        chunk = sentences[start : start + chunk_size]
         if chunk:
             chunks.append(chunk)
     return chunks
@@ -312,8 +320,12 @@ def main(force: bool = False) -> None:
     # local_files_only=True prevents HuggingFace API calls on every invocation
     # once the model is cached locally.
     print(f"Loading model '{Summarizer.MODEL_NAME}' …")
-    tokenizer = AutoTokenizer.from_pretrained(Summarizer.MODEL_NAME, local_files_only=True)
-    model = AutoModel.from_pretrained(Summarizer.MODEL_NAME, local_files_only=True).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(
+        Summarizer.MODEL_NAME, local_files_only=True
+    )
+    model = AutoModel.from_pretrained(Summarizer.MODEL_NAME, local_files_only=True).to(
+        device
+    )
     model.eval()
     print("Model loaded.\n")
 

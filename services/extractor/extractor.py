@@ -22,23 +22,24 @@ from dataclasses import dataclass, field
 # Result dataclass
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ExtractionResult:
     responsible_bodies: list[str] = field(default_factory=list)
-    obligations:        list[str] = field(default_factory=list)
-    deadlines:          list[str] = field(default_factory=list)
-    scope:              list[str] = field(default_factory=list)
-    subjects:           list[str] = field(default_factory=list)
-    sanctions:          list[str] = field(default_factory=list)
+    obligations: list[str] = field(default_factory=list)
+    deadlines: list[str] = field(default_factory=list)
+    scope: list[str] = field(default_factory=list)
+    subjects: list[str] = field(default_factory=list)
+    sanctions: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
             "responsible_bodies": self.responsible_bodies,
-            "obligations":        self.obligations,
-            "deadlines":          self.deadlines,
-            "scope":              self.scope,
-            "subjects":           self.subjects,
-            "sanctions":          self.sanctions,
+            "obligations": self.obligations,
+            "deadlines": self.deadlines,
+            "scope": self.scope,
+            "subjects": self.subjects,
+            "sanctions": self.sanctions,
         }
 
 
@@ -132,29 +133,79 @@ _SANCTION_SENT_RE = re.compile(
 )
 
 # Subjects: strip very short / stopword tokens from title words
-_SUBJECT_STOPWORDS = frozenset({
-    "o", "u", "i", "a", "te", "za", "na", "od", "do", "po", "iz", "se",
-    "je", "su", "će", "bi", "da", "li", "ali", "ili", "kao", "koji", "koja",
-    "koje", "ovim", "ovoga", "toga", "tome", "ovome", "sve", "svi", "svim",
-    "zakona", "zakon", "zakonom", "prečišćeni", "tekst", "izmjenama",
-    "dopunama", "odredbama", "odredbe", "primjeni", "primjena",
-    "br", "nn", "sl", "člana", "članak",
-})
+_SUBJECT_STOPWORDS = frozenset(
+    {
+        "o",
+        "u",
+        "i",
+        "a",
+        "te",
+        "za",
+        "na",
+        "od",
+        "do",
+        "po",
+        "iz",
+        "se",
+        "je",
+        "su",
+        "će",
+        "bi",
+        "da",
+        "li",
+        "ali",
+        "ili",
+        "kao",
+        "koji",
+        "koja",
+        "koje",
+        "ovim",
+        "ovoga",
+        "toga",
+        "tome",
+        "ovome",
+        "sve",
+        "svi",
+        "svim",
+        "zakona",
+        "zakon",
+        "zakonom",
+        "prečišćeni",
+        "tekst",
+        "izmjenama",
+        "dopunama",
+        "odredbama",
+        "odredbe",
+        "primjeni",
+        "primjena",
+        "br",
+        "nn",
+        "sl",
+        "člana",
+        "članak",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Helper utilities
 # ---------------------------------------------------------------------------
 
+
 def _sentences_from_doc(data: dict) -> list[str]:
-    """Collect all paragraph texts from doc_segmented + opis as a flat list."""
+    """
+    Collect all paragraph texts from doc_segmented + opis as a flat list.
+
+    New structure: [{"glava": "...", "članci": [{"članak": "...", "stavci": [...]}]}]
+    """
     sentences: list[str] = []
     opis = data.get("opis", "").strip()
     if opis:
         sentences.append(opis)
-    for clanak in data.get("doc_segmented", []):
-        for stavak in clanak.get("stavci", []):
-            sentences.extend(stavak.get("točke", []))
+    for chapter in data.get("doc_segmented", []):
+        for clanak in chapter.get("članci", []):
+            for stavak in clanak.get("stavci", []):
+                sentences.extend(stavak.get("točke", []))
     return sentences
 
 
@@ -176,6 +227,7 @@ def _dedupe_ordered(items: list[str], max_len: int = 120) -> list[str]:
 # ---------------------------------------------------------------------------
 # Extractor
 # ---------------------------------------------------------------------------
+
 
 class Extractor:
     """
@@ -200,17 +252,18 @@ class Extractor:
             data: A normalized / summarized document dict with at least
                   'doc_cleaned', 'doc_segmented', 'opis', and 'naslov' keys.
         """
-        text      = data.get("doc_cleaned", "")
+        text = data.get("doc_cleaned", "")
         sentences = _sentences_from_doc(data)
-        title     = data.get("naslov", "")
+        title = data.get("naslov", "")
+        doc_segmented = data.get("doc_segmented")
 
         return ExtractionResult(
-            responsible_bodies = self.extract_responsible_bodies(text, sentences),
-            obligations        = self.extract_obligations(sentences),
-            deadlines          = self.extract_deadlines(text),
-            scope              = self.extract_scope(sentences),
-            subjects           = self.extract_subjects(title, sentences),
-            sanctions          = self.extract_sanctions(sentences),
+            responsible_bodies=self.extract_responsible_bodies(text, sentences),
+            obligations=self.extract_obligations(sentences),
+            deadlines=self.extract_deadlines(text),
+            scope=self.extract_scope(sentences),
+            subjects=self.extract_subjects(title, sentences, doc_segmented),
+            sanctions=self.extract_sanctions(sentences),
         )
 
     # ------------------------------------------------------------------
@@ -241,10 +294,7 @@ class Extractor:
         bodies: list[str] = []
 
         # Find sentences containing institution keywords
-        candidate_sentences = [
-            s for s in sentences
-            if _INSTITUTION_KEYWORDS.search(s)
-        ]
+        candidate_sentences = [s for s in sentences if _INSTITUTION_KEYWORDS.search(s)]
 
         for sent in candidate_sentences:
             for m in _BODY_RE.finditer(sent):
@@ -258,9 +308,7 @@ class Extractor:
                     bodies.append(candidate)
 
         # Also scan the full text for ALL-CAPS institution names (header-style)
-        for m in re.finditer(
-            r"\b([A-ZŠĐČĆŽ][A-ZŠĐČĆŽА-ЯЁ\s]{10,60})\b", text
-        ):
+        for m in re.finditer(r"\b([A-ZŠĐČĆŽ][A-ZŠĐČĆŽА-ЯЁ\s]{10,60})\b", text):
             candidate = m.group().strip()
             if _INSTITUTION_KEYWORDS.search(candidate):
                 bodies.append(candidate.title())
@@ -300,12 +348,14 @@ class Extractor:
     # Subjects  – title + heading noun extraction
     # ------------------------------------------------------------------
 
-    def extract_subjects(self, title: str, sentences: list[str]) -> list[str]:
+    def extract_subjects(
+        self, title: str, sentences: list[str], doc_segmented: list | None = None
+    ) -> list[str]:
         """
         Extract thematic subjects from:
         1. The document title (split on known delimiters).
-        2. ALL-CAPS section headings inside the text.
-        3. Roman numeral chapter headings.
+        2. Chapter (glava) headings from doc_segmented.
+        3. ALL-CAPS section headings inside the text.
         """
         subjects: list[str] = []
 
@@ -314,20 +364,35 @@ class Extractor:
             # Remove parenthetical notes like "(prečišćeni tekst)"
             clean_title = re.sub(r"\(.*?\)", "", title).strip()
             # Split "Zakon o X i Y" → ["X", "Y"]
-            for part in re.split(r"\s+i\s+|\s*,\s*|\s+te\s+", clean_title, flags=re.IGNORECASE):
+            for part in re.split(
+                r"\s+i\s+|\s*,\s*|\s+te\s+", clean_title, flags=re.IGNORECASE
+            ):
                 part = part.strip()
                 # Strip leading "Zakon o", "Pravilnik o" etc.
                 part = re.sub(
                     r"^(?:zakon|pravilnik|uredba|odluka|naredba|"
                     r"rješenje|naputak|uputa)\s+o\s+",
-                    "", part, flags=re.IGNORECASE,
+                    "",
+                    part,
+                    flags=re.IGNORECASE,
                 ).strip()
                 tokens = [
-                    t for t in part.split()
+                    t
+                    for t in part.split()
                     if t.lower() not in _SUBJECT_STOPWORDS and len(t) > 2
                 ]
                 if tokens:
                     subjects.append(" ".join(tokens))
+
+        # Chapter (glava) headings from doc_segmented
+        if doc_segmented:
+            for chapter in doc_segmented:
+                glava = chapter.get("glava", "")
+                if glava:
+                    # Strip leading Roman numeral and period
+                    cleaned = re.sub(r"^[IVX]+\.?\s+", "", glava).strip()
+                    if cleaned:
+                        subjects.append(cleaned)
 
         # ALL-CAPS section headings inside doc (e.g. "I. ZAJEDNIČKE ODREDBE")
         for sent in sentences:

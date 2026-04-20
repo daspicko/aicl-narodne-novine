@@ -6,7 +6,7 @@ import type { DocumentFull, SearchIndexEntry, SearchIndexManifest } from '@/lib/
 import { paramsToEli } from '@/lib/eli-utils';
 import SummaryBlock from '../../components/SummaryBlock';
 import KeyInfoPanel from '../../components/KeyInfoPanel';
-import SegmentList from '../../components/SegmentList';
+import DocumentText from '../../components/DocumentText';
 
 export function generateStaticParams(): { eli: string[] }[] {
   try {
@@ -97,22 +97,7 @@ export default async function DocumentPage({ params }: Props) {
 
       {hasKeyInfo && <KeyInfoPanel ki={doc.key_information!} />}
 
-      {doc.doc_segmented && doc.doc_segmented.length > 0 && (
-        <SegmentList segments={doc.doc_segmented} />
-      )}
-
-      {doc.doc_cleaned && (
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-            Puni tekst
-          </h2>
-          <div className="rounded-lg border border-zinc-200 bg-white p-6">
-            <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
-              {doc.doc_cleaned}
-            </p>
-          </div>
-        </section>
-      )}
+      <DocumentText segments={doc.doc_segmented} fullText={doc.doc_cleaned ?? undefined} />
 
       <div>
         <Link

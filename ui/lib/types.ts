@@ -22,12 +22,19 @@ export interface SearchIndexManifest {
 
 // ── Full document (public/data/eli/…json) ───────────────────────────────────
 
-export interface Segment {
+export interface SegmentStavak {
+  stavak: string | null;
+  točke: string[];
+}
+
+export interface SegmentClanak {
   članak: string;
-  stavci: Array<{
-    stavak: string | null;
-    točke: string[];
-  }>;
+  stavci: SegmentStavak[];
+}
+
+export interface Segment {
+  glava: string;
+  članci: SegmentClanak[];
 }
 
 export interface StructuredSummary {
