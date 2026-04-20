@@ -17,6 +17,7 @@ function parseTočke(točke: string[]): Array<{ type: string; items: string[] } 
   let buffer: string[] = [];
   let listType = '';
   let currentList: string[] = [];
+  let lastNum = 0;
 
   const flush = () => {
     if (buffer.length > 0) result.push(...buffer);
@@ -24,23 +25,34 @@ function parseTočke(točke: string[]): Array<{ type: string; items: string[] } 
     buffer = [];
     currentList = [];
     listType = '';
+    lastNum = 0;
   };
 
   for (const line of točke) {
-    const numMatch = line.match(/^(\d+)\.\s*(.+)$/);
-    const dashMatch = line.match(/^-\s*(.+)$/);
+    const trimmed = line.trim();
+    const numMatch = trimmed.match(/^(\d+)\.\s*(.+)$/);
+    const dashMatch = trimmed.match(/^-\s*(.+)$/);
 
     if (numMatch) {
-      flush();
-      listType = 'decimal';
-      currentList.push(numMatch[2]);
+      const num = parseInt(numMatch[1]);
+      const isSequential = listType === 'decimal' && (num === lastNum + 1 || (lastNum === 0 && currentList.length > 0));
+      if (isSequential && currentList.length > 0) {
+        currentList.push(numMatch[2]);
+      } else {
+        flush();
+        listType = 'decimal';
+        currentList.push(numMatch[2]);
+      }
+      lastNum = num;
     } else if (dashMatch) {
       flush();
       listType = 'disc';
       currentList.push(dashMatch[1]);
+      lastNum = 0;
     } else {
-      if (currentList.length > 0 && line.startsWith(' ')) {
-        currentList.push(line.trim());
+      if (currentList.length > 0 && (trimmed === '' || trimmed.startsWith('da ') || trimmed.match(/^[a-zäöü]/))) {
+        currentList.push(trimmed);
+        lastNum = 0;
       } else {
         flush();
         buffer.push(line);
@@ -60,11 +72,17 @@ function TočkeRenderer({ točke }: { točke: string[] }) {
         if (typeof item === 'string') {
           return <p key={idx} className="mb-1">{item}</p>;
         }
-        const listType = item.type === 'decimal' ? 'decimal' : 'disc';
-        return (
-          <ul key={idx} className="list-disc list-inside ml-4 mb-1 space-y-1" style={{ listStyleType: listType }}>
+        const isOrdered = item.type === 'decimal';
+        return isOrdered ? (
+          <ol key={idx} className="list-decimal list-inside ml-4 mb-2 space-y-1">
             {item.items.map((it, si) => (
-              <li key={si}>{it}</li>
+              <li key={si} className="text-sm text-zinc-600">{it}</li>
+            ))}
+          </ol>
+        ) : (
+          <ul key={idx} className="list-disc list-inside ml-4 mb-2 space-y-1">
+            {item.items.map((it, si) => (
+              <li key={si} className="text-sm text-zinc-600">{it}</li>
             ))}
           </ul>
         );

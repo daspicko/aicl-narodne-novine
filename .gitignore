@@ -52,7 +52,7 @@ next-env.d.ts
 data
 
 # Services
-services/scraper/all_urls.json
-services/scraper/storage
+pipeline/scraper/all_urls.json
+pipeline/scraper/storage
 services/summarizer/*.png
 ui/public/search-index*.json

@@ -58,13 +58,13 @@ _CHUNK_SENTENCE_LIMIT = 80
 # Resolve paths
 # ---------------------------------------------------------------------------
 
-# Script lives at:  services/summarizer/summarize_data.py
+# Script lives at:  pipeline/summarizer/summarize_data.py
 # Repo root is two levels up
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 NORMALIZED_DIR = _REPO_ROOT / "data" / "normalized"
 SUMMARIZED_DIR = _REPO_ROOT / "data" / "summarized"
 
-# Add services/summarizer to sys.path so we can import Summarizer
+# Add pipeline/summarizer to sys.path so we can import Summarizer
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from summarizer import Summarizer  # noqa: E402
 

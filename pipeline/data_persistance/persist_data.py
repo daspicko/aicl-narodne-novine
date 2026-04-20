@@ -10,9 +10,9 @@ Intended to run on any machine that has:
   - DATABASE_URL set in .env (or the environment)
 
 Usage:
-    python services/data_persistance/data_persistance.py
-    python services/data_persistance/data_persistance.py --dir /path/to/embedded
-    python services/data_persistance/data_persistance.py --dir /path/to/embedded --create-tables
+    python pipeline/data_persistance/data_persistance.py
+    python pipeline/data_persistance/data_persistance.py --dir /path/to/embedded
+    python pipeline/data_persistance/data_persistance.py --dir /path/to/embedded --create-tables
 """
 
 import argparse

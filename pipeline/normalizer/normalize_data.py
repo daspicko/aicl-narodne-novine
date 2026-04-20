@@ -58,7 +58,7 @@ from bs4 import BeautifulSoup, Tag
 # Paths
 # ---------------------------------------------------------------------------
 
-# Script lives at:  services/normalizer/normalize_data.py
+# Script lives at:  pipeline/normalizer/normalize_data.py
 # Repo root is two levels up
 _DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
 

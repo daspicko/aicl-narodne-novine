@@ -9,7 +9,7 @@ Models downloaded:
   - sentence-transformers/all-MiniLM-L6-v2  (embedder)
 
 Run once before using the pipeline:
-    python services/model_loader/load_models.py
+    python pipeline/model_loader/load_models.py
 """
 
 from transformers import AutoTokenizer, AutoModel
