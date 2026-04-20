@@ -16,6 +16,7 @@ node_modules
 
 # next.js
 ui/.next/
+ui/build/
 /out/
 
 # production
@@ -54,3 +55,4 @@ data
 services/scraper/all_urls.json
 services/scraper/storage
 services/summarizer/*.png
+ui/public/search-index*.json

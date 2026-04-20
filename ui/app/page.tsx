@@ -1,65 +1,116 @@
-import Image from "next/image";
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import Link from 'next/link';
+import SearchBar from './components/SearchBar';
+import ResultCard from './components/ResultCard';
+import type { SearchIndexEntry, SearchIndexManifest } from '@/lib/types';
+
+// ── Load search index at build time (server component) ──────────────────────
+
+function loadLatestDocuments(count = 6): SearchIndexEntry[] {
+  try {
+    const manifestPath = join(process.cwd(), 'public', 'search-index-manifest.json');
+    const manifest: SearchIndexManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    const indexPath = join(process.cwd(), 'public', manifest.file);
+    const index: SearchIndexEntry[] = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    return index.slice(0, count);
+  } catch {
+    return [];
+  }
+}
+
+const EXAMPLE_QUERIES = [
+  'zakon o udruženjima',
+  'registracija društvenih organizacija',
+  'prestanak udruženja',
+  'novčana kazna prekršaj',
+];
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const latest = loadLatestDocuments(6);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="mx-auto max-w-4xl px-4 sm:px-6 py-16 space-y-16">
+
+        {/* Hero */}
+        <section className="text-center space-y-6">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-tight">
+            Inteligentno pretraživanje<br />
+            <span className="text-blue-600 dark:text-blue-400">Narodnih novina</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+            Pretraži zakone, uredbe i odluke semantičkim pretraživanjem.
+            Svaki dokument obogaćen je automatski generiranim sažetkom i
+            ključnim informacijama (obveze, rokovi, nadležna tijela).
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <div className="max-w-xl mx-auto">
+            <SearchBar autoFocus />
+          </div>
+        </section>
+
+        {/* Example queries */}
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
+                         dark:text-zinc-400 mb-3 text-center">
+            Primjeri upita
+          </h2>
+          <div className="flex flex-wrap justify-center gap-2">
+            {EXAMPLE_QUERIES.map(q => (
+              <Link
+                key={q}
+                href={`/search?q=${encodeURIComponent(q)}`}
+                className="text-sm px-4 py-2 rounded-full border border-zinc-300 dark:border-zinc-700
+                           bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300
+                           hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600
+                           dark:hover:text-blue-400 transition-colors"
+              >
+                {q}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Feature pills */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { icon: '🔍', title: 'Hibridno pretraživanje', desc: 'Leksičko + semantičko + rerankiranje' },
+            { icon: '📝', title: 'Automatski sažeci', desc: 'Kratki, detaljni i strukturirani sažetak svakog zakona' },
+            { icon: '🔑', title: 'Ključne informacije', desc: 'Obveze, rokovi, nadležna tijela, sankcije' },
+          ].map(f => (
+            <div key={f.title} className="rounded-xl border border-zinc-200 dark:border-zinc-700
+                                            bg-white dark:bg-zinc-900 p-5 text-center">
+              <div className="text-3xl mb-2">{f.icon}</div>
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-sm mb-1">{f.title}</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug">{f.desc}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* Latest documents */}
+        {latest.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
+                             dark:text-zinc-400">
+                Najnoviji dokumenti
+              </h2>
+              <Link
+                href="/search"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Prikaži sve →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {latest.map(doc => (
+                <ResultCard key={doc.eli} result={{ ...doc }} />
+              ))}
+            </div>
+          </section>
+        )}
+
+    </main>
   );
 }
