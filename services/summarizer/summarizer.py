@@ -1,7 +1,13 @@
+import os
 import re
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel
+from transformers import logging as transformers_logging
+
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+transformers_logging.set_verbosity_error()
 
 class Summarizer:
     MODEL_NAME = "classla/bcms-bertic" # Extraction summary - better for legal documents
@@ -38,9 +44,15 @@ class Summarizer:
 
     def mmr_select(self, sentence_embeddings, doc_embedding, num_sentences=3, lambda_param=0.7):
         """
-        MMR = lambda * relevance_to_document - (1-lambda) * redundancy
+        MMR = lambda * cosine_similarity(sentence, document)
+                - (1 - lambda) * max cosine_similarity(sentence, selected)
         """
-        doc_scores = torch.mm(sentence_embeddings, doc_embedding.T).squeeze(1)
+        # cosine similarity of each sentence against the whole document
+        doc_scores = F.cosine_similarity(
+            sentence_embeddings,                          # (N, hidden)
+            doc_embedding.expand(len(sentence_embeddings), -1),  # (N, hidden)
+        )  # → (N,)
+
         selected = []
         candidates = list(range(len(doc_scores)))
 
@@ -55,8 +67,12 @@ class Summarizer:
             for i in candidates:
                 relevance = doc_scores[i].item()
 
+                # cosine similarity against each already-selected sentence
                 redundancy = max(
-                    torch.dot(sentence_embeddings[i], sentence_embeddings[j]).item()
+                    F.cosine_similarity(
+                        sentence_embeddings[i].unsqueeze(0),
+                        sentence_embeddings[j].unsqueeze(0),
+                    ).item()
                     for j in selected
                 )
 
@@ -75,8 +91,8 @@ class Summarizer:
         if len(sentences) <= num_sentences:
             return text
 
-        tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME)
-        model = AutoModel.from_pretrained(self.MODEL_NAME)
+        tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, local_files_only=True)
+        model = AutoModel.from_pretrained(self.MODEL_NAME, local_files_only=True)
 
         sentence_embeddings = self.embed_texts(sentences, tokenizer, model, device=device)
         doc_embedding = self.embed_texts([text], tokenizer, model, device=device)
@@ -94,13 +110,18 @@ class Summarizer:
     def extractive_summary_with_scores(self, text, num_sentences=3, lambda_param=0.7, device="cpu"):
         sentences = self.split_sentences(text)
 
-        tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME)
-        model = AutoModel.from_pretrained(self.MODEL_NAME)
+        tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, local_files_only=True)
+        model = AutoModel.from_pretrained(self.MODEL_NAME, local_files_only=True)
 
         sentence_embeddings = self.embed_texts(sentences, tokenizer, model, device=device)
         doc_embedding = self.embed_texts([text], tokenizer, model, device=device)
 
-        doc_scores = torch.mm(sentence_embeddings, doc_embedding.T).squeeze(1)
+        # cosine similarity scores for ranking display
+        doc_scores = F.cosine_similarity(
+            sentence_embeddings,
+            doc_embedding.expand(len(sentence_embeddings), -1),
+        )
+
         selected_indices = self.mmr_select(
             sentence_embeddings,
             doc_embedding,
