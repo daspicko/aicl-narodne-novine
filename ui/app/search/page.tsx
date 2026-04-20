@@ -9,16 +9,23 @@ import FilterSidebar from '../components/FilterSidebar';
 import OfflineBadge from '../components/OfflineBadge';
 import SearchBar from '../components/SearchBar';
 
-// Static export compatibility
 export const dynamic = 'force-static';
 
-// ── Inner component (reads searchParams) ─────────────────────────────────────
+function normalizeInput(query: string): string {
+  const q = query.trim();
+  const nnMatch = q.match(/^(\d{1,3})\/(\d{4})$/);
+  if (nnMatch) {
+    return `NN ${nnMatch[1]}/${nnMatch[2]}`;
+  }
+  return q;
+}
 
 function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const query = searchParams.get('q') ?? '';
+  const rawQuery = searchParams.get('q') ?? '';
+  const query = normalizeInput(rawQuery);
   const [vrsta,   setVrsta]   = useState(searchParams.get('vrsta')   ?? '');
   const [izdanje, setIzdanje] = useState(searchParams.get('izdanje') ?? '');
 
@@ -73,7 +80,7 @@ function SearchResults() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-[60vw] px-4 sm:px-6 py-8 space-y-6">
 
       {/* Search bar */}
       <SearchBar initialQuery={query} autoFocus={!query} />
@@ -81,19 +88,19 @@ function SearchResults() {
       {/* Status bar */}
       <div className="flex flex-wrap items-center gap-3 min-h-[24px]">
         {loading && (
-          <span className="text-sm text-zinc-500 dark:text-zinc-400 animate-pulse">
+          <span className="text-sm text-zinc-400 animate-pulse">
             Pretražujem…
           </span>
         )}
         {!loading && searched && (
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+          <span className="text-sm text-zinc-400">
             {results.length} {results.length === 1 ? 'rezultat' : 'rezultata'}
             {query ? ` za „${query}"` : ''}
           </span>
         )}
         {isOffline && <OfflineBadge />}
         {error && (
-          <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
+          <span className="text-sm text-red-500">{error}</span>
         )}
       </div>
 
@@ -108,9 +115,8 @@ function SearchResults() {
 
         <div className="flex-1 space-y-4">
           {!loading && searched && results.length === 0 && (
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-700
-                            bg-white dark:bg-zinc-900 p-10 text-center text-zinc-500
-                            dark:text-zinc-400 text-sm">
+            <div className="rounded-lg border border-zinc-200
+                            bg-white p-10 text-center text-zinc-400 text-sm">
               Nema rezultata za zadanu pretragu.
             </div>
           )}
@@ -129,7 +135,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 text-sm text-zinc-500">
+        <div className="mx-auto max-w-[60vw] px-4 sm:px-6 py-8 text-sm text-zinc-400">
           Učitavam…
         </div>
       }

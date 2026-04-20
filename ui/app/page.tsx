@@ -32,15 +32,15 @@ export default function Home() {
   const latest = loadLatestDocuments(6);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 sm:px-6 py-16 space-y-16">
+    <main className="mx-auto max-w-[60vw] px-4 sm:px-6 py-16 space-y-16">
 
         {/* Hero */}
         <section className="text-center space-y-6">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-700 leading-tight">
             Inteligentno pretraživanje<br />
-            <span className="text-blue-600 dark:text-blue-400">Narodnih novina</span>
+            <span className="text-blue-500">Narodnih novina</span>
           </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-lg text-zinc-500 max-w-xl mx-auto leading-relaxed">
             Pretraži zakone, uredbe i odluke semantičkim pretraživanjem.
             Svaki dokument obogaćen je automatski generiranim sažetkom i
             ključnim informacijama (obveze, rokovi, nadležna tijela).
@@ -50,40 +50,30 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Example queries */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                         dark:text-zinc-400 mb-3 text-center">
-            Primjeri upita
-          </h2>
-          <div className="flex flex-wrap justify-center gap-2">
-            {EXAMPLE_QUERIES.map(q => (
-              <Link
-                key={q}
-                href={`/search?q=${encodeURIComponent(q)}`}
-                className="text-sm px-4 py-2 rounded-full border border-zinc-300 dark:border-zinc-700
-                           bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300
-                           hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600
-                           dark:hover:text-blue-400 transition-colors"
-              >
-                {q}
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* Feature pills */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: '🔍', title: 'Hibridno pretraživanje', desc: 'Leksičko + semantičko + rerankiranje' },
-            { icon: '📝', title: 'Automatski sažeci', desc: 'Kratki, detaljni i strukturirani sažetak svakog zakona' },
-            { icon: '🔑', title: 'Ključne informacije', desc: 'Obveze, rokovi, nadležna tijela, sankcije' },
+            { 
+              icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" d="m21 21-4.35-4.35"/></svg>, 
+              title: 'Hibridno pretraživanje', 
+              desc: 'Leksičko + semantičko + rangiranje' 
+            },
+            { 
+              icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>, 
+              title: 'Automatski sažeci', 
+              desc: 'Kratki, detaljni i strukturirani sažetak svakog zakona' 
+            },
+            { 
+              icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>, 
+              title: 'Ključne informacije', 
+              desc: 'Obveze, rokovi, nadležna tijela, kaznene mjere' 
+            },
           ].map(f => (
-            <div key={f.title} className="rounded-xl border border-zinc-200 dark:border-zinc-700
-                                            bg-white dark:bg-zinc-900 p-5 text-center">
-              <div className="text-3xl mb-2">{f.icon}</div>
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-sm mb-1">{f.title}</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug">{f.desc}</p>
+            <div key={f.title} className="rounded-lg border border-zinc-200
+                                            bg-white p-5 text-center flex flex-col items-center">
+              <div className="text-zinc-400 mb-3">{f.icon}</div>
+              <h3 className="font-semibold text-zinc-600 text-sm mb-1">{f.title}</h3>
+              <p className="text-xs text-zinc-400 leading-snug">{f.desc}</p>
             </div>
           ))}
         </section>
@@ -92,13 +82,12 @@ export default function Home() {
         {latest.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                             dark:text-zinc-400">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 Najnoviji dokumenti
               </h2>
               <Link
                 href="/search"
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-xs text-blue-500 hover:underline"
               >
                 Prikaži sve →
               </Link>

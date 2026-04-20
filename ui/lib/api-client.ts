@@ -77,10 +77,45 @@ async function backendSearch(
 
 // ── Fallback (Fuse.js) search ─────────────────────────────────────────────────
 
+function normalizeIzdanje(izdanje: string): string {
+  if (!izdanje) return '';
+  const trimmed = izdanje.trim();
+  const match = trimmed.match(/^(\d{1,3})\/(\d{4})$/);
+  if (match) {
+    return `NN ${match[1]}/${match[2]}`;
+  }
+  const withPrefix = trimmed.match(/^nn\s+(\d{1,3})\/(\d{4})$/i);
+  if (withPrefix) {
+    return `NN ${withPrefix[1]}/${withPrefix[2]}`;
+  }
+  return trimmed;
+}
+
 function applyFilters(entry: SearchIndexEntry, filters: SearchFilters): boolean {
-  if (filters.vrsta   && entry.vrsta   !== filters.vrsta)   return false;
-  if (filters.izdanje && entry.izdanje !== filters.izdanje) return false;
+  if (filters.vrsta && entry.vrsta !== filters.vrsta) return false;
+  if (filters.izdanje) {
+    const normalizedFilter = normalizeIzdanje(filters.izdanje);
+    const entryIzdanje = entry.izdanje || '';
+    if (entryIzdanje !== normalizedFilter) return false;
+  }
   return true;
+}
+
+function normalizeNNQuery(query: string): string {
+  const trimmed = query.trim();
+  if (!trimmed) return trimmed;
+  
+  const nnMatch = trimmed.match(/^(\d{1,3})\/(\d{4})$/);
+  if (nnMatch) {
+    return `NN ${nnMatch[1]}/${nnMatch[2]}`;
+  }
+  
+  const nnWithPrefix = trimmed.match(/^nn\s+(\d{1,3})\/(\d{4})$/i);
+  if (nnWithPrefix) {
+    return `NN ${nnWithPrefix[1]}/${nnWithPrefix[2]}`;
+  }
+  
+  return trimmed;
 }
 
 async function fallbackSearch(
@@ -88,9 +123,9 @@ async function fallbackSearch(
   filters: SearchFilters,
 ): Promise<SearchResultCard[]> {
   const index = await loadSearchIndex();
+  const normalizedQuery = normalizeNNQuery(query);
 
-  if (!query.trim()) {
-    // No query → return latest documents filtered
+  if (!normalizedQuery) {
     return index
       .filter(e => applyFilters(e, filters))
       .slice(0, 20)
@@ -98,7 +133,7 @@ async function fallbackSearch(
   }
 
   const fuse = await getFuse();
-  const results = fuse.search(query);
+  const results = fuse.search(normalizedQuery);
 
   return results
     .filter(r => applyFilters(r.item, filters))

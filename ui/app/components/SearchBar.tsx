@@ -22,7 +22,7 @@ export default function SearchBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex gap-2">
+    <form onSubmit={handleSubmit} className="w-full flex gap-2 max-w-[60vw]">
       <input
         ref={inputRef}
         type="search"
@@ -30,14 +30,14 @@ export default function SearchBar({
         onChange={e => setQuery(e.target.value)}
         placeholder="Pretražite zakone, uredbe, odluke…"
         autoFocus={autoFocus}
-        className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-700
-                   bg-white dark:bg-zinc-900 px-4 py-3 text-base text-zinc-900
-                   dark:text-zinc-50 placeholder:text-zinc-400
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex-1 rounded-lg border border-zinc-300
+                   bg-white px-4 py-3 text-base text-zinc-700
+                   placeholder:text-zinc-400
+                   focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
       <button
         type="submit"
-        className="rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-3 text-sm
+        className="rounded-lg bg-blue-500 hover:bg-blue-600 px-5 py-3 text-sm
                    font-semibold text-white transition-colors whitespace-nowrap"
       >
         Pretraži

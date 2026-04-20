@@ -18,8 +18,7 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                     dark:text-zinc-400 mb-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
         Članci ({segments.length})
       </h2>
       <div className="space-y-1">
@@ -29,14 +28,13 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
           return (
             <div
               key={i}
-              className="rounded-lg border border-zinc-200 dark:border-zinc-700
-                         bg-white dark:bg-zinc-900 overflow-hidden"
+              className="rounded-md border border-zinc-200 bg-white overflow-hidden"
             >
               <button
                 onClick={() => toggle(i)}
                 className="w-full flex items-center justify-between px-4 py-2.5
-                           text-left text-sm font-medium text-zinc-800 dark:text-zinc-200
-                           hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                           text-left text-sm font-medium text-zinc-600
+                           hover:bg-zinc-50 transition-colors"
               >
                 <span>{seg.članak}</span>
                 <span className={`text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
@@ -45,7 +43,7 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
               </button>
 
               {!isOpen && preview && (
-                <p className="px-4 pb-2.5 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                <p className="px-4 pb-2.5 text-xs text-zinc-400 line-clamp-1">
                   {preview}
                 </p>
               )}
@@ -56,7 +54,7 @@ export default function SegmentList({ segments }: { segments: Segment[] }) {
                     stavak.točke.map((točka, ti) => (
                       <p
                         key={`${si}-${ti}`}
-                        className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed"
+                        className="text-sm text-zinc-600 leading-relaxed"
                       >
                         {točka}
                       </p>

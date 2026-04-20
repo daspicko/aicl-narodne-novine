@@ -9,6 +9,15 @@ interface FilterSidebarProps {
 
 const VRSTE = ['', 'Zakon', 'Uredba', 'Odluka', 'Pravilnik', 'Naredba', 'Rješenje', 'Ostalo'];
 
+function displayNN(value: string): string {
+  if (!value) return '';
+  const match = value.match(/^NN\s+(\d{1,3})\/(\d{4})$/);
+  if (match) {
+    return `${match[1]}/${match[2]}`;
+  }
+  return value;
+}
+
 export default function FilterSidebar({
   vrsta,
   izdanje,
@@ -18,8 +27,7 @@ export default function FilterSidebar({
   return (
     <aside className="w-full md:w-56 shrink-0 space-y-6">
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                       dark:text-zinc-400 mb-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
           Vrsta dokumenta
         </h3>
         <div className="space-y-1">
@@ -27,10 +35,10 @@ export default function FilterSidebar({
             <button
               key={v}
               onClick={() => onVrstaChange(v)}
-              className={`w-full text-left text-sm px-3 py-1.5 rounded-lg transition-colors ${
+              className={`w-full text-left text-sm px-3 py-1.5 rounded-md transition-colors ${
                 vrsta === v
-                  ? 'bg-blue-600 text-white font-medium'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  ? 'bg-blue-500 text-white font-medium'
+                  : 'text-zinc-600 hover:bg-zinc-100'
               }`}
             >
               {v || 'Sve vrste'}
@@ -40,19 +48,18 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                       dark:text-zinc-400 mb-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
           Broj NN
         </h3>
         <input
           type="text"
-          value={izdanje}
+          value={displayNN(izdanje)}
           onChange={e => onIzdanjeChange(e.target.value)}
-          placeholder="npr. NN 10/1990"
-          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700
-                     bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900
-                     dark:text-zinc-50 placeholder:text-zinc-400
-                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="npr. 10/1990"
+          className="w-full rounded-md border border-zinc-300
+                     bg-white px-3 py-2 text-sm text-zinc-600
+                     placeholder:text-zinc-400
+                     focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
     </aside>

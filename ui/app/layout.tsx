@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "./components/NavBar";
+import Background from "./components/Background";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,9 @@ export const metadata: Metadata = {
   title: "Narodne novine — NLP pretraživanje zakona",
   description:
     "Inteligentno pretraživanje hrvatskih zakona, uredbi i odluka uz automatski generirane sažetke i ključne informacije.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,17 +33,18 @@ export default function RootLayout({
       lang="hr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
+      <body className="min-h-full flex flex-col bg-white">
         <NavBar />
-        <div className="flex-1">{children}</div>
-        <footer className="border-t border-zinc-200 dark:border-zinc-800 py-6 text-center
-                           text-xs text-zinc-400 dark:text-zinc-600">
+        <Background />
+        <div className="flex-1 relative z-10">{children}</div>
+        <footer className="relative z-10 border-t border-zinc-200 py-6 text-center
+                           text-xs text-zinc-400">
           Narodne novine NLP — podaci iz{" "}
           <a
             href="https://narodne-novine.nn.hr"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-zinc-600 dark:hover:text-zinc-400"
+            className="underline hover:text-zinc-600"
           >
             narodne-novine.nn.hr
           </a>

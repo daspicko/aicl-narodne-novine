@@ -8,8 +8,6 @@ import SummaryBlock from '../../components/SummaryBlock';
 import KeyInfoPanel from '../../components/KeyInfoPanel';
 import SegmentList from '../../components/SegmentList';
 
-// ── Static params generation ──────────────────────────────────────────────────
-
 export function generateStaticParams(): { eli: string[] }[] {
   try {
     const manifestPath = join(process.cwd(), 'public', 'search-index-manifest.json');
@@ -18,8 +16,6 @@ export function generateStaticParams(): { eli: string[] }[] {
     const index: SearchIndexEntry[] = JSON.parse(readFileSync(indexPath, 'utf-8'));
 
     return index.map(entry => ({
-      // eli field is "/eli/sluzbeni/1990/10/125"
-      // → strip leading slash → split by "/" → ["eli","sluzbeni","1990","10","125"]
       eli: entry.eli.replace(/^\//, '').split('/'),
     }));
   } catch {
@@ -27,12 +23,8 @@ export function generateStaticParams(): { eli: string[] }[] {
   }
 }
 
-// ── Load document data at build time ─────────────────────────────────────────
-
 function loadDocument(eli: string): DocumentFull | null {
   try {
-    // eli = "/eli/sluzbeni/1990/10/125"
-    // file at  public/data/eli/sluzbeni/1990/10/125.json
     const filePath = join(process.cwd(), 'public', 'data', eli.replace(/^\//, '') + '.json');
     return JSON.parse(readFileSync(filePath, 'utf-8')) as DocumentFull;
   } catch {
@@ -40,15 +32,13 @@ function loadDocument(eli: string): DocumentFull | null {
   }
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 interface Props {
   params: Promise<{ eli: string[] }>;
 }
 
 export default async function DocumentPage({ params }: Props) {
   const { eli: eliParts } = await params;
-  const eli = paramsToEli(eliParts);   // "/eli/sluzbeni/1990/10/125"
+  const eli = paramsToEli(eliParts);
   const doc = loadDocument(eli);
 
   if (!doc) notFound();
@@ -64,40 +54,38 @@ export default async function DocumentPage({ params }: Props) {
   );
 
   return (
-    <main className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-10">
+    <main className="mx-auto max-w-[60vw] px-4 sm:px-6 py-10 space-y-8">
 
-      {/* ── Metadata header ─────────────────────────────────────────────── */}
       <header className="space-y-3">
         <div className="flex flex-wrap gap-2 items-center">
           {doc.vrsta && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full
-                             bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
               {doc.vrsta}
             </span>
           )}
           {doc.izdanje && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{doc.izdanje}</span>
+            <span className="text-xs text-zinc-500">{doc.izdanje}</span>
           )}
           {doc.datum && (
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">{doc.datum}</span>
+            <span className="text-xs text-zinc-400">{doc.datum}</span>
           )}
           {doc.donositelj && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 italic">{doc.donositelj}</span>
+            <span className="text-xs text-zinc-400 italic">{doc.donositelj}</span>
           )}
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-snug">
+        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-700 leading-snug">
           {doc.naslov}
         </h1>
 
-        <div className="flex flex-wrap gap-4 items-center text-xs text-zinc-400 dark:text-zinc-500">
+        <div className="flex flex-wrap gap-4 items-center text-xs text-zinc-400">
           <span className="font-mono">{doc.eli}</span>
           {doc.eliUrl && (
             <a
               href={doc.eliUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-blue-500 hover:underline"
             >
               Izvor (Narodne novine) ↗
             </a>
@@ -105,38 +93,31 @@ export default async function DocumentPage({ params }: Props) {
         </div>
       </header>
 
-      {/* ── Summaries (top) ─────────────────────────────────────────────── */}
       {hasSummaries && <SummaryBlock summaries={doc.summaries!} />}
 
-      {/* ── Key information ─────────────────────────────────────────────── */}
       {hasKeyInfo && <KeyInfoPanel ki={doc.key_information!} />}
 
-      {/* ── Segments / articles ─────────────────────────────────────────── */}
       {doc.doc_segmented && doc.doc_segmented.length > 0 && (
         <SegmentList segments={doc.doc_segmented} />
       )}
 
-      {/* ── Full text (bottom) ──────────────────────────────────────────── */}
       {doc.doc_cleaned && (
         <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500
-                         dark:text-zinc-400 mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
             Puni tekst
           </h2>
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-700
-                          bg-white dark:bg-zinc-900 p-6">
-            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+          <div className="rounded-lg border border-zinc-200 bg-white p-6">
+            <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
               {doc.doc_cleaned}
             </p>
           </div>
         </section>
       )}
 
-      {/* ── Back link ───────────────────────────────────────────────────── */}
       <div>
         <Link
           href="/search"
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-sm text-blue-500 hover:underline"
         >
           ← Natrag na pretraživanje
         </Link>
