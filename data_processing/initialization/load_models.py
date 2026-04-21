@@ -1,15 +1,15 @@
 """
 load_models.py
 --------------
-Downloads both models used in the NLP pipeline to the local HuggingFace cache
+Downloads both models used in the NLP process to the local HuggingFace cache
 so that all subsequent scripts can run fully offline (HF_HUB_OFFLINE=1).
 
 Models downloaded:
-  - classla/bcms-bertic           (summarizer – extractive MMR)
-  - sentence-transformers/all-MiniLM-L6-v2  (embedder)
+  - classla/bcms-bertic           (summarization – extractive MMR)
+  - sentence-transformers/all-MiniLM-L6-v2  (embedding)
 
-Run once before using the pipeline:
-    python pipeline/model_loader/load_models.py
+Run once before using the individual data processes:
+    python data_processing/initialization/load_models.py
 """
 
 from transformers import AutoTokenizer, AutoModel
@@ -21,7 +21,7 @@ MODELS = [
     },
     {
         "name": "sentence-transformers/all-MiniLM-L6-v2",
-        "description": "MiniLM-L6 – multilingual sentence embedder (used by Embedder)",
+        "description": "MiniLM-L6 – multilingual sentence embedding (used by Embedder)",
     },
 ]
 

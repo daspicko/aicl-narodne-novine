@@ -1,7 +1,7 @@
 """
 extract_data.py
 ------------------
-Extraction pipeline for Croatian legal documents.
+Extraction process for Croatian legal documents.
 
 Input:   data/summarized/<year>/<issue>/<doc>.json
 Output:  data/extracted/<year>/<issue>/<doc>.json  (mirror tree, never mutates summarized)

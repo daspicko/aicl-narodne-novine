@@ -1,7 +1,7 @@
 """
 api/models/db
 -------------
-SQLAlchemy ORM models for the Croatian legal document pipeline.
+SQLAlchemy ORM models for the Croatian legal document processing.
 
 Import any model directly from this package:
 

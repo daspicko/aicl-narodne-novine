@@ -1,15 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-.idea
-__pycache__
-node_modules
-.venv
-
-# General extensions ignore
-*.bkp
-*.bak
 
 # Project specific ignores
-/data
-
-.env*
-!.env.example
+scraping/all_urls.json
+scraping/storage

@@ -1,20 +1,20 @@
-cd model_loader
+cd initialization
 uv run load_models.py
 
-cd ../scraper
+cd ../scraping
 uv run fetch_data.py
 
-cd ../normalizer
+cd ../normalization
 uv run normalize_data.py
 
-cd ../summarizer
+cd ../summarization
 uv run summarize_data.py
 
-cd ../extractor
+cd ../extraction
 uv run extract_data.py
 
-cd ../embedder
+cd ../embedding
 uv run embed_data.py
 
-cd ../data_persistance
-uv run persist_data.py
+cd ../storage
+uv run store_data.py

@@ -1,5 +1,5 @@
 """
-data_persistance.py
+storage.py
 --------------
 Standalone script that reads all data/embedded/*.json files and stores
 (upserts) them into PostgreSQL.
@@ -10,9 +10,9 @@ Intended to run on any machine that has:
   - DATABASE_URL set in .env (or the environment)
 
 Usage:
-    python pipeline/data_persistance/data_persistance.py
-    python pipeline/data_persistance/data_persistance.py --dir /path/to/embedded
-    python pipeline/data_persistance/data_persistance.py --dir /path/to/embedded --create-tables
+    python data_processing/storage/storage.py
+    python data_processing/storage/storage.py --dir /path/to/embedded
+    python data_processing/storage/storage.py --dir /path/to/embedded --create-tables
 """
 
 import argparse

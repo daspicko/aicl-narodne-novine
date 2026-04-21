@@ -1,7 +1,7 @@
 """
 embed_data.py
 -----------------
-Embedding pipeline for Croatian legal documents.
+Embedding process for Croatian legal documents.
 
 Input:   data/extracted/<year>/<issue>/<doc>.json
 Output:  data/embedded/<year>/<issue>/<doc>.json  (mirror tree, never mutates extracted)

@@ -1,5 +1,5 @@
 """
-pipeline/importer.py
+services/importer.py
 --------------------
 Reads all JSON files from data/embedded/ and upserts every entity into
 the PostgreSQL database.
