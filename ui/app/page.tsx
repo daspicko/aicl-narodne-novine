@@ -78,28 +78,6 @@ export default function Home() {
           ))}
         </section>
 
-        {/* Latest documents */}
-        {latest.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                Najnoviji dokumenti
-              </h2>
-              <Link
-                href="/search"
-                className="text-xs text-blue-500 hover:underline"
-              >
-                Prikaži sve →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {latest.map(doc => (
-                <ResultCard key={doc.eli} result={{ ...doc }} />
-              ))}
-            </div>
-          </section>
-        )}
-
-    </main>
+        </main>
   );
 }
