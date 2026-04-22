@@ -9,7 +9,7 @@ import FilterSidebar from '../components/FilterSidebar';
 import OfflineBadge from '../components/OfflineBadge';
 import SearchBar from '../components/SearchBar';
 
-export const dynamic = 'force-static';
+const PAGE_SIZE = parseInt(process.env.NEXT_PUBLIC_SEARCH_RESULT_SIZE ?? '10', 10);
 
 function normalizeInput(query: string): string {
   const q = query.trim();
@@ -26,20 +26,23 @@ function SearchResults() {
 
   const rawQuery = searchParams.get('q') ?? '';
   const query = normalizeInput(rawQuery);
-  const [vrsta,   setVrsta]   = useState(searchParams.get('vrsta')   ?? '');
-  const [izdanje, setIzdanje] = useState(searchParams.get('izdanje') ?? '');
+  const [vrsta, setVrsta] = useState(searchParams.get('vrsta') ?? '');
 
-  const [results,   setResults]   = useState<SearchResultCard[]>([]);
+  const [results, setResults] = useState<SearchResultCard[]>([]);
   const [isOffline, setIsOffline] = useState(false);
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
-  const [searched,  setSearched]  = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
-  // Track in-flight request so we can cancel on re-trigger
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!query && !vrsta && !izdanje) return;
+    setLimit(PAGE_SIZE);
+  }, [query, vrsta]);
+
+  useEffect(() => {
+    if (!query && !vrsta) return;
 
     abortRef.current?.abort();
     abortRef.current = new AbortController();
@@ -48,8 +51,7 @@ function SearchResults() {
     setError(null);
 
     const filters: SearchFilters = {
-      ...(vrsta   ? { vrsta }   : {}),
-      ...(izdanje ? { izdanje } : {}),
+      ...(vrsta ? { vrsta } : {}),
     };
 
     searchDocuments(query, filters)
@@ -62,9 +64,8 @@ function SearchResults() {
         if (err.name !== 'AbortError') setError('Greška pri pretraživanju.');
       })
       .finally(() => setLoading(false));
-  }, [query, vrsta, izdanje]);
+  }, [query, vrsta]);
 
-  // Update URL when filters change
   function handleVrstaChange(v: string) {
     setVrsta(v);
     const params = new URLSearchParams(searchParams.toString());
@@ -72,18 +73,14 @@ function SearchResults() {
     router.replace(`/search?${params.toString()}`);
   }
 
-  function handleIzdanjeChange(v: string) {
-    setIzdanje(v);
-    const params = new URLSearchParams(searchParams.toString());
-    if (v) params.set('izdanje', v); else params.delete('izdanje');
-    router.replace(`/search?${params.toString()}`);
-  }
+  const displayedResults = results.slice(0, limit);
+  const hasMore = results.length > limit;
 
   return (
     <div className="mx-auto max-w-[60vw] px-4 sm:px-6 py-8 space-y-6">
 
       {/* Search bar */}
-      <SearchBar initialQuery={query} autoFocus={!query} />
+      <SearchBar initialQuery={query} autoFocus={!query} showButton={false} minChars={3} />
 
       {/* Status bar */}
       <div className="flex flex-wrap items-center gap-3 min-h-[24px]">
@@ -108,21 +105,33 @@ function SearchResults() {
       <div className="flex flex-col md:flex-row gap-8">
         <FilterSidebar
           vrsta={vrsta}
-          izdanje={izdanje}
           onVrstaChange={handleVrstaChange}
-          onIzdanjeChange={handleIzdanjeChange}
         />
 
         <div className="flex-1 space-y-4">
+          {!query && !vrsta && !searched && (
+            <div className="rounded-lg border border-zinc-200
+                            bg-white p-10 text-center text-zinc-400 text-sm">
+              Upišite pojam za pretraživanje zakona, uredbi ili odluka.
+            </div>
+          )}
           {!loading && searched && results.length === 0 && (
             <div className="rounded-lg border border-zinc-200
                             bg-white p-10 text-center text-zinc-400 text-sm">
               Nema rezultata za zadanu pretragu.
             </div>
           )}
-          {results.map(r => (
+          {displayedResults.map(r => (
             <ResultCard key={r.eli} result={r} />
           ))}
+          {hasMore && (
+            <button
+              onClick={() => setLimit(l => l + PAGE_SIZE)}
+              className="text-sm text-blue-500 hover:underline"
+            >
+              Prikaži više
+            </button>
+          )}
         </div>
       </div>
     </div>

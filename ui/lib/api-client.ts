@@ -23,7 +23,7 @@ let fuseInstance: Fuse<SearchIndexEntry> | null = null;
 async function getFuse(): Promise<Fuse<SearchIndexEntry>> {
   if (fuseInstance) return fuseInstance;
   const index = await loadSearchIndex();
-  fuseInstance = new Fuse(index, {
+fuseInstance = new Fuse(index, {
     keys: [
       { name: 'naslov',        weight: 0.5 },
       { name: 'eli',           weight: 0.2 },
@@ -31,10 +31,12 @@ async function getFuse(): Promise<Fuse<SearchIndexEntry>> {
       { name: 'short_summary', weight: 0.1 },
       { name: 'donositelj',    weight: 0.05 },
     ],
-    threshold: 0.4,
+    threshold: 0.7,
+    distance: 100,
     includeScore: true,
     includeMatches: true,
     minMatchCharLength: 2,
+    ignoreLocation: true,
   });
   return fuseInstance;
 }
@@ -118,6 +120,11 @@ function normalizeNNQuery(query: string): string {
   return trimmed;
 }
 
+function textContainsQuery(text: string | null | undefined, query: string): boolean {
+  if (!text || !query) return false;
+  return text.toLowerCase().includes(query.toLowerCase());
+}
+
 async function fallbackSearch(
   query: string,
   filters: SearchFilters,
@@ -133,9 +140,24 @@ async function fallbackSearch(
   }
 
   const fuse = await getFuse();
-  const results = fuse.search(normalizedQuery);
+  const fuseResults = fuse.search(normalizedQuery);
 
-  return results
+  const fuseMatches = new Set(
+    fuseResults
+      .filter(r => applyFilters(r.item, filters))
+      .map(r => r.item.eli)
+  );
+
+  const directMatches = index
+    .filter(e => 
+      applyFilters(e, filters) &&
+      !fuseMatches.has(e.eli) &&
+      (textContainsQuery(e.naslov, normalizedQuery) ||
+       textContainsQuery(e.short_summary, normalizedQuery))
+    )
+    .map(e => ({ ...e, match_score: 0.99, match_type: 'fallback' as SearchResultCard['match_type'] }));
+
+  const fuseCards = fuseResults
     .filter(r => applyFilters(r.item, filters))
     .slice(0, 20)
     .map(r => {
@@ -150,6 +172,8 @@ async function fallbackSearch(
         match_type: 'fallback' as SearchResultCard['match_type'],
       };
     });
+
+  return [...directMatches, ...fuseCards].slice(0, 20);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

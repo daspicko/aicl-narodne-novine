@@ -5,7 +5,7 @@ export default function OfflineBadge() {
                      text-red-700
                      border border-red-200">
       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-      Offline — semantička pretraga nije dostupna
+      Offline — dostupna je samo osnovna pretraga
     </span>
   );
 }
