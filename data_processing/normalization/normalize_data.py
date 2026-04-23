@@ -60,12 +60,11 @@ from bs4 import BeautifulSoup, Tag
 
 # Script lives at:  data_processing/normalization/normalize_data.py
 # Repo root is two levels up
-_DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
 
-RAW_DIR = _DATA_ROOT / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
-NORMALIZED_DIR = (
-    _DATA_ROOT / "normalized"
-)  # output: data/normalized/<year>/<issue>/<doc>.json
+DATA_RAW_DIR = DATA_ROOT_DIR / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
+DATA_NORMALIZED_DIR = DATA_ROOT_DIR / "normalized"  # output: data/normalized/<year>/<issue>/<doc>.json
 
 # ---------------------------------------------------------------------------
 # Regex constants
@@ -372,8 +371,8 @@ def process_file(raw_path: Path) -> None:
     Files without a non-empty 'doc' field are copied as-is.
     Running the script again overwrites previous normalized output (idempotent).
     """
-    relative = raw_path.relative_to(RAW_DIR)
-    out_path = NORMALIZED_DIR / relative
+    relative = raw_path.relative_to(DATA_RAW_DIR)
+    out_path = DATA_NORMALIZED_DIR / relative
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(raw_path, encoding="utf-8") as f:
@@ -406,13 +405,13 @@ def process_file(raw_path: Path) -> None:
 
 
 def main() -> None:
-    """Recursively process every .json file under RAW_DIR → NORMALIZED_DIR."""
-    if not RAW_DIR.exists():
-        print(f"ERROR: raw data directory not found: {RAW_DIR}")
+    """Recursively process every .json file under DATA_RAW_DIR → DATA_NORMALIZED_DIR."""
+    if not DATA_RAW_DIR.exists():
+        print(f"ERROR: raw data directory not found: {DATA_RAW_DIR}")
         return
 
-    json_files = sorted(RAW_DIR.rglob("*.json"))
-    print(f"Found {len(json_files)} JSON file(s) in {RAW_DIR}\n")
+    json_files = sorted(DATA_RAW_DIR.rglob("*.json"))
+    print(f"Found {len(json_files)} JSON file(s) in {DATA_RAW_DIR}\n")
 
     errors: list[tuple[Path, Exception]] = []
 

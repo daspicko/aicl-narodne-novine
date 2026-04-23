@@ -1,6 +1,7 @@
 import asyncio
-import os
 import json
+import os
+from pathlib import Path
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -8,7 +9,16 @@ from crawlee.crawlers import PlaywrightCrawler, PlaywrightCrawlingContext
 
 from sitemap_collector import SitemapCollector
 
-EXPORT_FOLDER_PATH = "/home/davorin/workspaces/apprepo.eu/narodne-novine/data/raw"
+from dotenv import load_dotenv
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
+DATA_RAW_DIR = DATA_ROOT_DIR / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
+
+load_dotenv(REPO_ROOT / "data_processing" / ".env")
+
+DOCUMENT_LIMIT = int(os.environ.get("DOCUMENT_LIMIT", -1))  # If there is no limit defined, take all
+
 start = datetime.now()
 print("Collecting URLs from the sitemap...")
 sc = SitemapCollector("https://narodne-novine.nn.hr/sitemap.xml")
@@ -17,7 +27,7 @@ print("Time taken to collect URLs:", datetime.now() - start)
 
 async def main() -> None:
     crawler = PlaywrightCrawler(
-        max_requests_per_crawl=25,  # Limit the max requests per crawl.
+        max_requests_per_crawl=25000,
         headless=True,  # Run in headless mode (set to False to see the browser).
         browser_type='firefox',  # Use Firefox browser.
     )
@@ -84,24 +94,23 @@ async def main() -> None:
 
         path = eli_text.replace("/eli/sluzbeni/", "") if eli_text else eli_url.replace("https://narodne-novine.nn.hr/eli/sluzbeni/", "")
         filename = path.split("/")[-1] + ".json"
-        folder_name = EXPORT_FOLDER_PATH + "/" + "/".join(path.split("/")[:-1])
+        folder_name = DATA_RAW_DIR / Path(*path.split("/")[:-1])
 
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
+        folder_name.mkdir(parents=True, exist_ok=True)
 
         # Parse content and extract data
-        with open(folder_name + "/" + filename, "w", encoding="utf-8") as f:
+        with open(folder_name / filename, "w", encoding="utf-8") as f:
             f.write(json.dumps(data, ensure_ascii=False))
 
     # Filter out URLs that have already been fetched (file exists in data/raw).
     def is_cached(url: str) -> bool:
         path = url.replace("https://narodne-novine.nn.hr/eli/sluzbeni/", "")
         filename = path.split("/")[-1] + ".json"
-        folder_name = EXPORT_FOLDER_PATH + "/" + "/".join(path.split("/")[:-1])
-        return os.path.exists(os.path.join(folder_name, filename))
+        folder_name = DATA_RAW_DIR / Path(*path.split("/")[:-1])
+        return (folder_name / filename).exists()
 
-    urls_to_fetch = [url for url in sc.all_urls[0:10] if not is_cached(url)]
-    print(f"Fetching {len(urls_to_fetch)} URLs (skipping {10 - len(urls_to_fetch)} cached).")
+    document_limit = DOCUMENT_LIMIT if 0 < DOCUMENT_LIMIT < len(sc.all_urls) else len(sc.all_urls)
+    urls_to_fetch = [url for url in sc.all_urls[0:document_limit] if not is_cached(url)]
 
     # Run the crawler with the initial list of URLs.
     await crawler.run(urls_to_fetch)

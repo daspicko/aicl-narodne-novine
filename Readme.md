@@ -50,11 +50,12 @@ Za potrebe projekta nisu bili trenirani vlastiti modeli, već su korišteni već
 
 ## Pokretanje
 
-Za pokretanje projekta potrebno je imati instaliran Python 3 (rađeno na verziji 3.13, ali vjerojatno radi i sa starijim verzijama). Također je potrebno instalirati potrebne biblioteke koje su navedene u `requirements.txt` datoteci.
+Za pokretanje projekta potrebno je imati instaliran Python 3 (rađeno na verziji 3.13, ali vjerojatno radi i sa starijim verzijama). Također je potrebno instalirati potrebne biblioteke koje su navedene u `requirements.txt` datotekama. To je najjednostavnije odraditi sa alatom [uv](https://docs.astral.sh/uv/getting-started/installation/).
 Vektorske reprezentacije dokumenta su spremljene u pgvector bazi podataka, stoga je potrebno imati instaliran pgvector extension za PostgreSQL bazu podataka.
 Najjednostavniji način pokretanja projekta je korištenje Docker-a, gdje su svi dijelovi projekta već konfigurirani i spremni za pokretanje. U tom slučaju je potrebno imati instaliran Docker te pokrenuti naredbu:
 
 ```bash
+uv venv --clear && source .venv/bin/activate && uv pip install -r api/requirements.txt && uv pip install -r data_processing/requirements.txt
 docker run pgvector/pgvector:pg18-trixie -p 8080:8080 -e POSTGRES_PASSWORD=mysecretpassword
 ```
 

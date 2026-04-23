@@ -30,10 +30,11 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
 
-_REPO_ROOT    = Path(__file__).resolve().parents[2]
-SUMMARIZED_DIR = _REPO_ROOT / "data" / "summarized"
-EXTRACTED_DIR  = _REPO_ROOT / "data" / "extracted"
+DATA_SUMMARIZED_DIR = DATA_ROOT_DIR / "summarized"  # output: data/summarized/<year>/<issue>/<doc>.json
+DATA_EXTRACTED_DIR = DATA_ROOT_DIR / "extracted"  # output: data/extracted/<year>/<issue>/<doc>.json
 
 # Make the extractor importable regardless of working directory
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -60,8 +61,8 @@ def process_file(path: Path, extractor: Extractor) -> None:
     result = extractor.extract(data)
     data["key_information"] = result.to_dict()
 
-    relative = path.relative_to(SUMMARIZED_DIR)
-    out_path  = EXTRACTED_DIR / relative
+    relative = path.relative_to(DATA_SUMMARIZED_DIR)
+    out_path  = DATA_EXTRACTED_DIR / relative
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -76,15 +77,15 @@ def process_file(path: Path, extractor: Extractor) -> None:
 
 
 def main(force: bool = False) -> None:
-    if not SUMMARIZED_DIR.exists():
-        print(f"ERROR: summarized data directory not found: {SUMMARIZED_DIR}")
+    if not DATA_SUMMARIZED_DIR.exists():
+        print(f"ERROR: summarized data directory not found: {DATA_SUMMARIZED_DIR}")
         return
 
-    print(f"Input:  {SUMMARIZED_DIR}")
-    print(f"Output: {EXTRACTED_DIR}\n")
+    print(f"Input:  {DATA_SUMMARIZED_DIR}")
+    print(f"Output: {DATA_EXTRACTED_DIR}\n")
 
     extractor  = Extractor()
-    json_files = sorted(SUMMARIZED_DIR.rglob("*.json"))
+    json_files = sorted(DATA_SUMMARIZED_DIR.rglob("*.json"))
     print(f"Found {len(json_files)} JSON file(s)\n")
 
     errors:  list[tuple[Path, Exception]] = []
@@ -92,8 +93,8 @@ def main(force: bool = False) -> None:
 
     for path in json_files:
         try:
-            relative = path.relative_to(SUMMARIZED_DIR)
-            out_path = EXTRACTED_DIR / relative
+            relative = path.relative_to(DATA_SUMMARIZED_DIR)
+            out_path = DATA_EXTRACTED_DIR / relative
 
             if not force and out_path.exists():
                 skipped += 1

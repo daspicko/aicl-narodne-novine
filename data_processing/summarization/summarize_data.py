@@ -60,9 +60,11 @@ _CHUNK_SENTENCE_LIMIT = 80
 
 # Script lives at:  data_processing/summarization/summarize_data.py
 # Repo root is two levels up
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-NORMALIZED_DIR = _REPO_ROOT / "data" / "normalized"
-SUMMARIZED_DIR = _REPO_ROOT / "data" / "summarized"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
+
+DATA_NORMALIZED_DIR = DATA_ROOT_DIR / "normalized"  # output: data/normalized/<year>/<issue>/<doc>.json
+DATA_SUMMARIZED_DIR = DATA_ROOT_DIR / "summarized"  # output: data/summarized/<year>/<issue>/<doc>.json
 
 # Add data_processing/summarizer to sys.path so we can import Summarizer
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -281,8 +283,8 @@ def process_file(path: Path, summarizer: Summarizer, device: str) -> None:
         },
     }
 
-    relative = path.relative_to(NORMALIZED_DIR)
-    out_path = SUMMARIZED_DIR / relative
+    relative = path.relative_to(DATA_NORMALIZED_DIR)
+    out_path = DATA_SUMMARIZED_DIR / relative
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -301,20 +303,20 @@ def process_file(path: Path, summarizer: Summarizer, device: str) -> None:
 
 def main(force: bool = False) -> None:
     """
-    Recursively process every .json file under NORMALIZED_DIR.
+    Recursively process every .json file under DATA_NORMALIZED_DIR.
 
     Args:
         force: When True, re-summarize files that already have a 'summaries'
                field. When False (default), those files are skipped.
     """
-    if not NORMALIZED_DIR.exists():
-        print(f"ERROR: normalized data directory not found: {NORMALIZED_DIR}")
+    if not DATA_NORMALIZED_DIR.exists():
+        print(f"ERROR: normalized data directory not found: {DATA_NORMALIZED_DIR}")
         return
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}\n")
-    print(f"Input:  {NORMALIZED_DIR}")
-    print(f"Output: {SUMMARIZED_DIR}\n")
+    print(f"Input:  {DATA_NORMALIZED_DIR}")
+    print(f"Output: {DATA_SUMMARIZED_DIR}\n")
 
     # Load model once and share across all file calls.
     # local_files_only=True prevents HuggingFace API calls on every invocation
@@ -331,8 +333,8 @@ def main(force: bool = False) -> None:
 
     summarizer = _make_summarizer_with_shared_model(tokenizer, model, device)
 
-    json_files = sorted(NORMALIZED_DIR.rglob("*.json"))
-    print(f"Found {len(json_files)} JSON file(s) in {NORMALIZED_DIR}\n")
+    json_files = sorted(DATA_NORMALIZED_DIR.rglob("*.json"))
+    print(f"Found {len(json_files)} JSON file(s) in {DATA_NORMALIZED_DIR}\n")
 
     errors: list[tuple[Path, Exception]] = []
     skipped = 0
@@ -340,8 +342,8 @@ def main(force: bool = False) -> None:
     for path in json_files:
         try:
             # Skip if output already exists in data/summarized/ (idempotent)
-            relative = path.relative_to(NORMALIZED_DIR)
-            out_path = SUMMARIZED_DIR / relative
+            relative = path.relative_to(DATA_NORMALIZED_DIR)
+            out_path = DATA_SUMMARIZED_DIR / relative
 
             if not force and out_path.exists():
                 skipped += 1

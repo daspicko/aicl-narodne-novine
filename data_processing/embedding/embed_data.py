@@ -46,10 +46,11 @@ import torch  # noqa: E402 – must come after env vars
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-EXTRACTED_DIR = _REPO_ROOT / "data" / "extracted"
-EMBEDDED_DIR = _REPO_ROOT / "data" / "embedded"
+DATA_EXTRACTED_DIR = DATA_ROOT_DIR / "extracted"  # output: data/extracted/<year>/<issue>/<doc>.json
+DATA_EMBEDDED_DIR = DATA_ROOT_DIR / "embedded"  # output: data/embedded/<year>/<issue>/<doc>.json
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from embedder import Embedder  # noqa: E402
@@ -74,8 +75,8 @@ def process_file(path: Path, embedder: Embedder) -> None:
     result = embedder.embed(data)
     data["embeddings"] = result.to_dict()
 
-    relative = path.relative_to(EXTRACTED_DIR)
-    out_path = EMBEDDED_DIR / relative
+    relative = path.relative_to(DATA_EXTRACTED_DIR)
+    out_path = DATA_EMBEDDED_DIR / relative
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -92,20 +93,20 @@ def process_file(path: Path, embedder: Embedder) -> None:
 
 
 def main(force: bool = False) -> None:
-    if not EXTRACTED_DIR.exists():
-        print(f"ERROR: extracted data directory not found: {EXTRACTED_DIR}")
+    if not DATA_EXTRACTED_DIR.exists():
+        print(f"ERROR: extracted data directory not found: {DATA_EXTRACTED_DIR}")
         return
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
-    print(f"Input:  {EXTRACTED_DIR}")
-    print(f"Output: {EMBEDDED_DIR}\n")
+    print(f"Input:  {DATA_EXTRACTED_DIR}")
+    print(f"Output: {DATA_EMBEDDED_DIR}\n")
 
     print("Loading embedding model …")
     embedder = Embedder(device=device)
     print(f"Model loaded: {embedder.model_name}  (dim={embedder.embedding_dim})\n")
 
-    json_files = sorted(EXTRACTED_DIR.rglob("*.json"))
+    json_files = sorted(DATA_EXTRACTED_DIR.rglob("*.json"))
     print(f"Found {len(json_files)} JSON file(s)\n")
 
     errors: list[tuple[Path, Exception]] = []
@@ -113,8 +114,8 @@ def main(force: bool = False) -> None:
 
     for path in json_files:
         try:
-            relative = path.relative_to(EXTRACTED_DIR)
-            out_path = EMBEDDED_DIR / relative
+            relative = path.relative_to(DATA_EXTRACTED_DIR)
+            out_path = DATA_EMBEDDED_DIR / relative
 
             if not force and out_path.exists():
                 skipped += 1

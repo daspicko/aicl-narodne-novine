@@ -23,12 +23,16 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Repo root on sys.path so api.* is importable regardless of CWD
 # ---------------------------------------------------------------------------
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO_ROOT))
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT_DIR = REPO_ROOT / "data"
+
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+DATA_EMBEDDED_DIR = DATA_ROOT_DIR / "embedded"  # output: data/embedded/<year>/<issue>/<doc>.json
 
 from dotenv import load_dotenv
-
-load_dotenv(_REPO_ROOT / ".env")
+load_dotenv(REPO_ROOT / "data_processing" / ".env")
 
 # ---------------------------------------------------------------------------
 # DB setup  (mirrors api/database.py but fully self-contained)
@@ -41,6 +45,7 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
+from api.services.importer import import_all
 # ---------------------------------------------------------------------------
 # Optional table creation (CREATE TABLE IF NOT EXISTS via SQLAlchemy metadata)
 # ---------------------------------------------------------------------------
@@ -80,14 +85,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    embedded_dir: Path = args.dir or (_REPO_ROOT / "data" / "embedded")
-
-    if not embedded_dir.exists():
-        print(f"ERROR: directory not found: {embedded_dir}")
+    if not DATA_EMBEDDED_DIR.exists():
+        print(f"ERROR: directory not found: {DATA_EMBEDDED_DIR}")
         sys.exit(1)
 
     print(f"Database : {DATABASE_URL.split('@')[-1]}")   # hide credentials
-    print(f"Source   : {embedded_dir}")
+    print(f"Source   : {DATA_EMBEDDED_DIR}")
     print()
 
     if args.create_tables:
@@ -95,13 +98,10 @@ def main() -> None:
         _create_tables()
         print()
 
-    # Reuse the battle-tested importer from the API service layer
-    from api.services.importer import import_all
-
     db = SessionLocal()
     try:
         print("Importing …")
-        result = import_all(db, embedded_dir=embedded_dir)
+        result = import_all(db, embedded_dir=DATA_EMBEDDED_DIR)
     finally:
         db.close()
 
