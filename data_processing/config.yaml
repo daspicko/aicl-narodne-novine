@@ -19,10 +19,10 @@ models:
       embedding_dim: 768
 
 selected_model:
-  summarizer: microsoft/deberta-v3-large
+  summarizer: classla/bcms-bertic
   embedding:
-    name: sentence-transformers/all-mpnet-base-v2
-    embedding_dim: 768 # Update database schema if you change this document_embedding.py
+    name: sentence-transformers/all-MiniLM-L6-v2
+    embedding_dim: 384 # Update database schema if you change this api/models/db/document_embedding.py
 
 # Scraping parameters
 document_limit: 50

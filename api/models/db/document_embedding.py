@@ -46,9 +46,9 @@ class DocumentEmbedding(Base):
 
     embedding_type = Column(String(100),   nullable=False)
     model_name     = Column(String(128),  nullable=False)
-    embedding_dim  = Column(SmallInteger, nullable=False, default=768)
+    embedding_dim  = Column(SmallInteger, nullable=False, default=384)
 
-    embedding = Column(Vector(768), nullable=False)
+    embedding = Column(Vector(384), nullable=False)
 
     document = relationship("Document", back_populates="embeddings")
     segment  = relationship("DocumentSegment", foreign_keys=[segment_id])

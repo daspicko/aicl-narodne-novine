@@ -36,16 +36,17 @@ Podaci sadrže službene objave zakona, pravilnika i odluka, uključujući naslo
 
 Za potrebe projekta nisu bili trenirani vlastiti modeli, već su korišteni već trenirani modeli dostupni na Hugging Face platformi. 
 
-- Za sažimanje i izdvajanje ključnih informacija korišten je model [classla/bcms-bertic](https://huggingface.co/classla/bcms-bertic)
-- za semantičko pretraživanje korišten model [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+- Za sažimanje i izdvajanje ključnih informacija korišten je model [microsoft/deberta-v3-large](https://huggingface.co/microsoft/deberta-v3-large)
+- za semantičko pretraživanje korišten model [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2)
 - Ostali isprobani modeli:
   - Sažimanje:
-    - https://huggingface.co/google-bert/bert-base-multilingual-cased
-    - https://huggingface.co/answerdotai/ModernBERT-base
-    - https://huggingface.co/answerdotai/ModernBERT-large
+    - [classla/bcms-bertic](https://huggingface.co/classla/bcms-bertic)
+    - [FacebookAI/xlm-roberta-large](https://huggingface.co/FacebookAI/xlm-roberta-large)
+    - [microsoft/deberta-v3-large](https://huggingface.co/microsoft/deberta-v3-large)
   - Semantičko pretraživanje:
+    - [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+    - [sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
     - [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2)
-    - [sentence-transformers/all-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2)
 
 
 ## Pokretanje
