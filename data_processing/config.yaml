@@ -1,0 +1,38 @@
+# Load models from Hugging Face Hub for summarization and embedding generation
+models:
+  summarizers:
+    - name: classla/bcms-bertic
+      description: BERTić – Croatian/Bosnian/Serbian BERT
+    - name: FacebookAI/xlm-roberta-large
+      description: XLM-RoBERTa Large – multilingual RoBERTa for 100 languages
+    - name: microsoft/deberta-v3-large
+      description: DeBERTa v3 Large – multilingual DeBERTa for 100 languages
+  embeddings:
+    - name: sentence-transformers/all-MiniLM-L6-v2
+      description: MiniLM-L6 – multilingual sentence embedding
+      embedding_dim: 384
+    - name: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      description: Paraphrase-Multilingual-MiniLM-L12 – multilingual paraphrase sentence embedding
+      embedding_dim: 384
+    - name: sentence-transformers/all-mpnet-base-v2
+      description: MPNet-Base – multilingual sentence embedding
+      embedding_dim: 768
+
+selected_model:
+  summarizer: microsoft/deberta-v3-large
+  embedding:
+    name: sentence-transformers/all-mpnet-base-v2
+    embedding_dim: 768 # Update database schema if you change this document_embedding.py
+
+# Scraping parameters
+document_limit: 50
+timeout: 10000
+max_requests_per_crawl: 25000
+
+# Summarization parameters
+embed_batch_size: 16 # Maximum number of sentences embedded in a single forward pass. Lower this if you hit OOM on your GPU.
+chunk_sentence_limit: 100 # Documents with more sentences than this threshold are split into chunks and summarized via map-reduce before a final synthesis pass.
+
+# Embedding parameters
+max_tokens: 512      # model's effective context window (word-pieces per chunk)
+batch_size: 32       # sentences / passages per forward pass

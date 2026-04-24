@@ -54,6 +54,13 @@ function eliToRelPath(eli) {
 
 // ── main ─────────────────────────────────────────────────────────────────────
 
+// ── clean up stale public/data from previous build ──────────────────────────
+
+if (existsSync(DATA_OUT_DIR)) {
+  rmSync(DATA_OUT_DIR, { recursive: true, force: true });
+  console.log('   🗑  removed stale public/data');
+}
+
 console.log('🔨 build-static-data: collecting documents from', EXTRACTED_DIR);
 
 const allFiles = collectJsonFiles(EXTRACTED_DIR);

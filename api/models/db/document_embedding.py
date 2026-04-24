@@ -44,12 +44,11 @@ class DocumentEmbedding(Base):
         nullable=True, index=True,
     )
 
-    embedding_type = Column(String(80),   nullable=False)
+    embedding_type = Column(String(100),   nullable=False)
     model_name     = Column(String(128),  nullable=False)
-    embedding_dim  = Column(SmallInteger, nullable=False, default=384)
+    embedding_dim  = Column(SmallInteger, nullable=False, default=768)
 
-    # pgvector column – 384 dimensions (sentence-transformers/all-MiniLM-L6-v2)
-    embedding = Column(Vector(384), nullable=False)
+    embedding = Column(Vector(768), nullable=False)
 
     document = relationship("Document", back_populates="embeddings")
     segment  = relationship("DocumentSegment", foreign_keys=[segment_id])

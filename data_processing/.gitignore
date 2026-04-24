@@ -3,3 +3,4 @@
 # Project specific ignores
 scraping/all_urls.json
 scraping/storage
+logs

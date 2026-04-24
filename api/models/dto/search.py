@@ -29,20 +29,10 @@ class SearchRequest(BaseModel):
 
 class SearchResultItem(BaseModel):
     """One document card in a search result list."""
-    id:               int
-    eli:              str
-    vrsta:            Optional[str]
-    izdanje:          Optional[str]
-    donositelj:       Optional[str]
-    datum:            Optional[str]
-    naslov:           str
-    short_summary:    Optional[str] = None
-    match_score:      Optional[float] = Field(None, description="Relevance score [0–1]")
-    match_type:       Optional[str]   = Field(None, description="'lexical', 'semantic', or 'hybrid'")
-    highlights:       list[str]       = Field(default_factory=list,
-                                              description="Matching text snippets")
-    key_info_preview: Optional[dict]  = Field(None,
-                                              description="subjects + deadlines preview")
+    id:          int
+    eli:         str
+    match_score: Optional[float] = Field(None, description="Relevance score [0–1]")
+    match_type:  Optional[str]   = Field(None, description="'lexical', 'semantic', or 'hybrid'")
 
 
 class SearchResponse(BaseModel):

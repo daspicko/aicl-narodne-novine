@@ -11,20 +11,24 @@ Models downloaded:
 Run once before using the individual data processes:
     python data_processing/initialization/load_models.py
 """
-
+from pathlib import Path
 from transformers import AutoTokenizer, AutoModel
+import yaml
+from dotenv import load_dotenv
 
-MODELS = [
-    {
-        "name": "classla/bcms-bertic",
-        "description": "BERTić – Croatian/Bosnian/Serbian BERT (used by Summarizer)",
-    },
-    {
-        "name": "sentence-transformers/all-MiniLM-L6-v2",
-        "description": "MiniLM-L6 – multilingual sentence embedding (used by Embedder)",
-    },
-]
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
+load_dotenv(MODULE_DIR / ".env")
+with open(MODULE_DIR / "config.yaml") as f:
+    _cfg = yaml.safe_load(f)
+
+MODELS = []
+for model in _cfg["models"]["summarizers"]:
+    MODELS.append(model)
+for model in _cfg["models"]["embeddings"]:
+    MODELS.append(model)
 
 def download_model(name: str, description: str) -> None:
     print(f"\n{'─' * 60}")

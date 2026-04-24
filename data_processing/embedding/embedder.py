@@ -29,20 +29,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModel
 
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
-_cfg = yaml.safe_load((Path(__file__).parent / "config.yaml").read_text())
+# ==================== Configure ====================
+with open(MODULE_DIR / "config.yaml") as f:
+    _cfg = yaml.safe_load(f)
 
-MODEL_NAME = _cfg["model_name"]
-_MAX_TOKENS = _cfg["max_tokens"]
-_BATCH_SIZE = _cfg["batch_size"]
-_EMBEDDING_DIM = _cfg["embedding_dim"]
-
-# ---------------------------------------------------------------------------
-# Result dataclass
-# ---------------------------------------------------------------------------
+_MODEL_NAME = _cfg["selected_model"]["embedding"]["name"]
+_MAX_TOKENS = int(_cfg["max_tokens"])
+_BATCH_SIZE = int(_cfg["batch_size"])
+_EMBEDDING_DIM = int(_cfg["selected_model"]["embedding"]["embedding_dim"])
 
 
 @dataclass
@@ -64,7 +62,7 @@ class EmbeddingResult:
     title_embedding: list[float] = field(default_factory=list)
     summary_embeddings: dict[str, list[float]] = field(default_factory=dict)
     segment_embeddings: list[dict] = field(default_factory=list)
-    model_name: str = MODEL_NAME
+    model_name: str = _MODEL_NAME
     embedding_dim: int = _EMBEDDING_DIM
 
     def to_dict(self) -> dict:
@@ -100,12 +98,12 @@ class Embedder:
 
     def __init__(self, device: str | None = None) -> None:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model_name = MODEL_NAME
+        self.model_name = _MODEL_NAME
         self.embedding_dim = _EMBEDDING_DIM
         self.tokenizer = AutoTokenizer.from_pretrained(
-            MODEL_NAME, local_files_only=True
+            _MODEL_NAME, local_files_only=True
         )
-        self.model = AutoModel.from_pretrained(MODEL_NAME, local_files_only=True)
+        self.model = AutoModel.from_pretrained(_MODEL_NAME, local_files_only=True)
         self.model = self.model.to(self.device)
         self.model.eval()
 
@@ -124,7 +122,7 @@ class Embedder:
         Returns:
             EmbeddingResult with all levels populated.
         """
-        result = EmbeddingResult(model_name=MODEL_NAME, embedding_dim=_EMBEDDING_DIM)
+        result = EmbeddingResult(model_name=_MODEL_NAME, embedding_dim=_EMBEDDING_DIM)
 
         # 1. Document-level
         doc_text = data.get("doc_cleaned", "").strip()

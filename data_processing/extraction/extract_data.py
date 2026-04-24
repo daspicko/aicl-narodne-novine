@@ -27,23 +27,18 @@ import json
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_ROOT_DIR = REPO_ROOT / "data"
 
+# ==================== Configure ====================
+DATA_ROOT_DIR = REPO_ROOT / "data"
 DATA_SUMMARIZED_DIR = DATA_ROOT_DIR / "summarized"  # output: data/summarized/<year>/<issue>/<doc>.json
 DATA_EXTRACTED_DIR = DATA_ROOT_DIR / "extracted"  # output: data/extracted/<year>/<issue>/<doc>.json
 
 # Make the extractor importable regardless of working directory
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(MODULE_DIR))
 from extractor import Extractor  # noqa: E402
-
-# ---------------------------------------------------------------------------
-# File-level processing
-# ---------------------------------------------------------------------------
-
 
 def process_file(path: Path, extractor: Extractor) -> None:
     """

@@ -2,6 +2,7 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun",
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/build-static-data.mjs",
@@ -9,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "deploy:local": "rm -rf /var/www/local/narodne-novine.apprepo.eu/* && cp -r build/* /var/www/local/narodne-novine.apprepo.eu/",
-    "deploy:localFull": "npm run prebuild && npm run build && npm run deploy:local"
+    "deploy:localFull": "bun run prebuild && bun run build && bun run deploy:local"
   },
   "dependencies": {
     "fuse.js": "^7.3.0",

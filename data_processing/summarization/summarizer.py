@@ -9,7 +9,8 @@ from transformers import logging as transformers_logging
 transformers_logging.set_verbosity_error()
 
 class Summarizer:
-    MODEL_NAME = "classla/bcms-bertic" # Extraction summary - better for legal documents
+    def __init__(self, model_name: str = None):
+        self.MODEL_NAME = model_name
 
     def split_sentences(self, text: str):
         # Simple sentence splitter

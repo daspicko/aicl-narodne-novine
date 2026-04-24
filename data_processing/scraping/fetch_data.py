@@ -1,23 +1,30 @@
 import asyncio
 import json
-import os
-from pathlib import Path
 from datetime import datetime
-from bs4 import BeautifulSoup
+from pathlib import Path
 
+import yaml
+from bs4 import BeautifulSoup
 from crawlee.crawlers import PlaywrightCrawler, PlaywrightCrawlingContext
+from dotenv import load_dotenv
 
 from sitemap_collector import SitemapCollector
 
-from dotenv import load_dotenv
-
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+load_dotenv(MODULE_DIR / ".env")
+with open(MODULE_DIR / "config.yaml") as f:
+    _cfg = yaml.safe_load(f)
+
+# ==================== Configure ====================
 DATA_ROOT_DIR = REPO_ROOT / "data"
 DATA_RAW_DIR = DATA_ROOT_DIR / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
 
-load_dotenv(REPO_ROOT / "data_processing" / ".env")
-
-DOCUMENT_LIMIT = int(os.environ.get("DOCUMENT_LIMIT", -1))  # If there is no limit defined, take all
+DOCUMENT_LIMIT = int(_cfg["document_limit"]) if _cfg["document_limit"] else -1  # If there is no limit defined, take all
+TIMEOUT = int(_cfg["timeout"]) if _cfg["timeout"] else 10_000  # Playwright timeout in milliseconds (default 10s); set to 0 for no timeout
+MAX_REQUESTS_PER_CRAWL = int(_cfg["max_requests_per_crawl"]) if _cfg["max_requests_per_crawl"] else 1000
 
 start = datetime.now()
 print("Collecting URLs from the sitemap...")
@@ -27,7 +34,7 @@ print("Time taken to collect URLs:", datetime.now() - start)
 
 async def main() -> None:
     crawler = PlaywrightCrawler(
-        max_requests_per_crawl=25000,
+        max_requests_per_crawl=MAX_REQUESTS_PER_CRAWL,
         headless=True,  # Run in headless mode (set to False to see the browser).
         browser_type='firefox',  # Use Firefox browser.
     )
@@ -35,7 +42,7 @@ async def main() -> None:
     @crawler.router.default_handler
     async def request_handler(context: PlaywrightCrawlingContext) -> None:
         # Follow any redirects and wait for the final page to fully load.
-        await context.page.wait_for_load_state("networkidle", timeout=10_000)
+        await context.page.wait_for_load_state("networkidle", timeout=TIMEOUT)
 
         content = await context.page.content()
         soup = BeautifulSoup(content, "html.parser")

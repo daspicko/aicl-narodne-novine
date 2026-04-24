@@ -36,44 +36,35 @@ To:
   [{"glava": "...", "članci": [{"članak": "...", "stavci": [...]}]}]
 """
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import json
 import sys
 from pathlib import Path
 import torch
+import yaml
 from transformers import AutoTokenizer, AutoModel
+from dotenv import load_dotenv
 
-# Maximum number of sentences embedded in a single forward pass.
-# Lower this if you still hit OOM on your GPU.
-_EMBED_BATCH_SIZE = 16
-
-# Documents with more sentences than this threshold are split into chunks
-# and summarized via map-reduce before a final synthesis pass.
-_CHUNK_SENTENCE_LIMIT = 80
-
-# ---------------------------------------------------------------------------
-# Resolve paths
-# ---------------------------------------------------------------------------
-
-# Script lives at:  data_processing/summarization/summarize_data.py
-# Repo root is two levels up
+load_dotenv()
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_ROOT_DIR = REPO_ROOT / "data"
 
+load_dotenv(MODULE_DIR / ".env")
+with open(MODULE_DIR / "config.yaml") as f:
+    _cfg = yaml.safe_load(f)
+
+# ==================== Configure ====================
+DATA_ROOT_DIR = REPO_ROOT / "data"
 DATA_NORMALIZED_DIR = DATA_ROOT_DIR / "normalized"  # output: data/normalized/<year>/<issue>/<doc>.json
 DATA_SUMMARIZED_DIR = DATA_ROOT_DIR / "summarized"  # output: data/summarized/<year>/<issue>/<doc>.json
 
+_EMBED_BATCH_SIZE = int(_cfg["embed_batch_size"])
+_CHUNK_SENTENCE_LIMIT = int(_cfg["chunk_sentence_limit"])
+_MODEL_NAME = _cfg["selected_model"]["summarizer"]
+
 # Add data_processing/summarizer to sys.path so we can import Summarizer
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(MODULE_DIR))
 from summarizer import Summarizer  # noqa: E402
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 
 def _build_scope_text(data: dict) -> str:
     """
@@ -321,11 +312,9 @@ def main(force: bool = False) -> None:
     # Load model once and share across all file calls.
     # local_files_only=True prevents HuggingFace API calls on every invocation
     # once the model is cached locally.
-    print(f"Loading model '{Summarizer.MODEL_NAME}' …")
-    tokenizer = AutoTokenizer.from_pretrained(
-        Summarizer.MODEL_NAME, local_files_only=True
-    )
-    model = AutoModel.from_pretrained(Summarizer.MODEL_NAME, local_files_only=True).to(
+    print(f"Loading model '{_MODEL_NAME}' …")
+    tokenizer = AutoTokenizer.from_pretrained(_MODEL_NAME, local_files_only=True)
+    model = AutoModel.from_pretrained(_MODEL_NAME, local_files_only=True).to(
         device
     )
     model.eval()

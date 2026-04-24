@@ -52,17 +52,18 @@ Output shape of doc_segmented:
 import json
 import re
 from pathlib import Path
+
 from bs4 import BeautifulSoup, Tag
+from dotenv import load_dotenv
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-
-# Script lives at:  data_processing/normalization/normalize_data.py
-# Repo root is two levels up
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve()
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_ROOT_DIR = REPO_ROOT / "data"
 
+load_dotenv(MODULE_DIR / ".env")
+
+# ==================== Configure ====================
+DATA_ROOT_DIR = REPO_ROOT / "data"
 DATA_RAW_DIR = DATA_ROOT_DIR / "raw"  # input:  data/raw/<year>/<issue>/<doc>.json
 DATA_NORMALIZED_DIR = DATA_ROOT_DIR / "normalized"  # output: data/normalized/<year>/<issue>/<doc>.json
 

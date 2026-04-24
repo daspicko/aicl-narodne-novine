@@ -44,16 +44,8 @@ def _doc_to_result(doc, score: float | None = None, match_type: str = "lexical")
     return SearchResultItem(
         id=doc.id,
         eli=doc.eli,
-        vrsta=doc.vrsta,
-        izdanje=doc.izdanje,
-        donositelj=doc.donositelj,
-        datum=doc.datum,
-        naslov=doc.naslov,
-        short_summary=short,
         match_score=score,
         match_type=match_type,
-        highlights=[],
-        key_info_preview=key_info_preview,
     )
 
 

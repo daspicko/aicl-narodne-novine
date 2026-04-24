@@ -43,22 +43,24 @@ from pathlib import Path
 
 import torch  # noqa: E402 – must come after env vars
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_ROOT_DIR = REPO_ROOT / "data"
+import yaml
+from dotenv import load_dotenv
 
+# ==================== Load configurations ====================
+MODULE_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+load_dotenv(MODULE_DIR / ".env")
+with open(MODULE_DIR / "config.yaml") as f:
+    _cfg = yaml.safe_load(f)
+
+# ==================== Configure ====================
+DATA_ROOT_DIR = REPO_ROOT / "data"
 DATA_EXTRACTED_DIR = DATA_ROOT_DIR / "extracted"  # output: data/extracted/<year>/<issue>/<doc>.json
 DATA_EMBEDDED_DIR = DATA_ROOT_DIR / "embedded"  # output: data/embedded/<year>/<issue>/<doc>.json
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(MODULE_DIR))
 from embedder import Embedder  # noqa: E402
-
-# ---------------------------------------------------------------------------
-# File-level processing
-# ---------------------------------------------------------------------------
-
 
 def process_file(path: Path, embedder: Embedder) -> None:
     """
