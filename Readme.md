@@ -56,6 +56,8 @@ Najjednostavniji način pokretanja projekta je korištenje Docker-a, gdje su svi
 
 ```bash
 uv venv --clear && source .venv/bin/activate && uv pip install -r api/requirements.txt && uv pip install -r data_processing/requirements.txt
+```
+```bash
 docker run pgvector/pgvector:pg18-trixie -p 8080:8080 -e POSTGRES_PASSWORD=mysecretpassword
 ```
 
@@ -66,7 +68,7 @@ Projekt se sastoji od tri dijela te je potrebno pokrenuti svaki od njih.
 Obrada podataka se vrši pomoću skripti koje su dostupne u `data_processing` direktoriju. Skripte su napisane u Pythonu te se pokreću pomoću naredbe:
 
 ```bash
-./pipeline.sh
+cd data_processing && ./pipeline.sh && cd -
 ```
 
 ### API (FastAPI)
@@ -74,7 +76,7 @@ Obrada podataka se vrši pomoću skripti koje su dostupne u `data_processing` di
 API je pisan u FastAPI frameworku i služi za dohvat vektorskih reprezentacija dokumenata. API se pokreće pomoću naredbe:
 
 ```bash
-fastapi dev
+cd api && fastapi dev && cd -
 ```
 
 ### Web aplikacija (Next.js)
@@ -82,5 +84,5 @@ fastapi dev
 Web aplikacija je pisana u Next.js frameworku i služi za prikaz sažetaka, ključnih informacija i semantičko pretraživanje zakona. Web aplikacija se pokreće pomoću naredbe:
 
 ```bash
-npm run dev
+cd ui && bun run dev && cd -
 ```
