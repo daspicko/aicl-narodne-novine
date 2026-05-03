@@ -1,11 +1,9 @@
 # NLP sustav za sažimanje, izdvajanje ključnih informacija i semantičko pretraživanje državnih zakona, pravilnika i odluka
 
-## O projektu
-
-### Opis problema
+## Opis problema
 Državni zakoni su dugi, formalni, teško pregledni i pretražuju se po ključnim riječima ili broju narodnih novina što otežava pronalazak releventnih zakona korisnicima koji nisu educirani u pravnom ili upravnom području. 
 
-### Ciljevi projekta
+## Ciljevi projekta
 
 Kreirati sustav koji će NLP cijevovodom (engl. pipeline) obogatiti postojeće zakone dostupne na stranicama Narodnih novina:
 - sažetcima
@@ -15,7 +13,7 @@ Kreirati sustav koji će NLP cijevovodom (engl. pipeline) obogatiti postojeće z
 Kreirati aplikaciju koja će omogućiti:
 - prikaz sažetaka i ključnih informacija
 - semantičko pretraživanje
-- pregled zakona (s bržim dohvatom dokumenata)
+- pregled zakona
 
 ## Dataset
 
@@ -36,8 +34,8 @@ Podaci sadrže službene objave zakona, pravilnika i odluka, uključujući naslo
 
 Za potrebe projekta nisu bili trenirani vlastiti modeli, već su korišteni već trenirani modeli dostupni na Hugging Face platformi. 
 
-- Za sažimanje i izdvajanje ključnih informacija korišten je model [microsoft/deberta-v3-large](https://huggingface.co/microsoft/deberta-v3-large)
-- za semantičko pretraživanje korišten model [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2)
+- Za sažimanje i izdvajanje ključnih informacija korišten je model [classla/bcms-bertic](https://huggingface.co/classla/bcms-bertic)
+- za semantičko pretraživanje korišten model [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
 - Ostali isprobani modeli:
   - Sažimanje:
     - [classla/bcms-bertic](https://huggingface.co/classla/bcms-bertic)
@@ -59,7 +57,7 @@ Najjednostavniji način pokretanja projekta je korištenje Docker-a, gdje su svi
 uv venv --clear && source .venv/bin/activate && uv pip install -r api/requirements.txt && uv pip install -r data_processing/requirements.txt
 ```
 ```bash
-docker run pgvector/pgvector:pg18-trixie -p 8080:8080 -e POSTGRES_PASSWORD=mysecretpassword
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword pgvector/pgvector:pg18-trixie
 ```
 
 Projekt se sastoji od tri dijela te je potrebno pokrenuti svaki od njih.
@@ -82,8 +80,13 @@ cd api && fastapi dev && cd -
 
 ### Web aplikacija (Next.js)
 
-Web aplikacija je pisana u Next.js frameworku i služi za prikaz sažetaka, ključnih informacija i semantičko pretraživanje zakona. Web aplikacija se pokreće pomoću naredbe:
+Web aplikacija je pisana u Next.js frameworku i služi za prikaz sažetaka, ključnih informacija i semantičko pretraživanje zakona. Prije pokretanja aplikacije, potrebno je instalirati zahtjeve:
 
+```bash
+cd ui && bun install && cd -
+```
+
+Web aplikacija se pokreće pomoću naredbe:
 ```bash
 cd ui && bun run dev && cd -
 ```
